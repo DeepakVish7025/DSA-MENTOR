@@ -84,14 +84,13 @@ const logout = async(req,res)=>{
         const {token} = req.cookies;
         const payload = jwt.decode(token);
 
+        if (redisClient.isOpen) {
+            await redisClient.set(`token:${token}`,'Blocked');
+            await redisClient.expireAt(`token:${token}`,payload.exp);
+        }
 
-        await redisClient.set(`token:${token}`,'Blocked');
-        await redisClient.expireAt(`token:${token}`,payload.exp);
-    //    Token add kar dung Redis ke blockList
-    //    Cookies ko clear kar dena.....
-
-    res.cookie("token",null,{expires: new Date(Date.now())});
-    res.send("Logged Out Succesfully");
+        res.cookie("token",null,{expires: new Date(Date.now())});
+        res.send("Logged Out Succesfully");
 
     }
     catch(err){
@@ -144,9 +143,7 @@ const deleteProfile = async(req,res)=>{
 
 const getProfile = async (req, res) => {
   try {
-
     const userId = req.result._id;
-
     const user = await User.findById(userId).select("-password");
 
     if (!user) {
@@ -162,5 +159,6 @@ const getProfile = async (req, res) => {
     res.status(500).send("Error: " + err.message);
   }
 };
+
 
 module.exports = {register, login,logout,adminRegister,deleteProfile,getProfile};

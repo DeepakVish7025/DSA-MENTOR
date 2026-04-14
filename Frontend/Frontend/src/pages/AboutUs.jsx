@@ -8,6 +8,7 @@ import {
   Linkedin,
 } from 'lucide-react';
 
+import reactlogo from "../assets/react.svg"
 const TeamMember = ({ name, role, bio, image, github, linkedin }) => (
   <div className="bg-white dark:bg-[#1a2332] rounded-xl p-6 shadow text-center">
     <img src={image} alt={name} className="w-20 h-20 rounded-full mx-auto mb-4 border-4 border-[#f97316]" />
@@ -101,7 +102,7 @@ const AboutUs = () => {
             name="Deepak Vishwakarma"
             role="Full Stack Developer"
             bio="Deepak built CodeMaster to help learners overcome common hurdles in coding education. He’s passionate about developer tools and community growth."
-            image="https://img.freepik.com/premium-photo/portrait-successful-programmer-game-developer-coder-guy-uses-computer-laptop-work-game-design-hacker-boy-generative-ai-cyber-gamer_117038-7605.jpg?w=2000"
+            image={reactlogo}
             github="https://github.com/Siddharth9304"
             linkedin="https://www.linkedin.com/in/premsiddhartha"
           />

@@ -20,16 +20,19 @@ const userMiddleware = async (req,res,next)=>{
 
         const result = await User.findById(_id);
 
-        if(!result){
+        if (!result) {
             throw new Error("User Doesn't Exist");
         }
 
-        // Redis ke blockList mein persent toh nahi hai
-
-        const IsBlocked = await redisClient.exists(`token:${token}`);
-
-        if(IsBlocked)
-            throw new Error("Invalid Token");
+        // Redis Check - Safe & Non-Blocking
+        try {
+            if (redisClient.isOpen) {
+                const IsBlocked = await redisClient.exists(`token:${token}`);
+                if (IsBlocked) throw new Error("Invalid Token");
+            }
+        } catch (redisErr) {
+            console.error("Redis Error in Middleware:", redisErr.message);
+        }
 
         req.result = result;
 

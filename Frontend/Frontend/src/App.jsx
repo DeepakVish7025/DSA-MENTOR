@@ -26,6 +26,7 @@ import CoursesPage from "./pages/CoursesPage";
 import CourseOverviewPage from "./pages/CourseOverviewPage";
 import CourseContentPage from "./pages/CourseContentPage";
 import Contest from "./pages/Contest";
+import ContestDetail from "./pages/ContestDetail";
 import Leaderboard from "./pages/Leaderboard";
 import AboutUs from "./pages/AboutUs";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
@@ -33,7 +34,7 @@ import ContactPage from "./pages/Contact";
 import InterviewPrepStudio from "./pages/InterviewPrepStudio";
 import LoadingPage from "./components/LoadingPage";
 import DocumentationPage from "./pages/doc";
-
+import VerifyCertificate from "./pages/VerifyCertificate";
 
 
 
@@ -65,6 +66,18 @@ function App() {
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
         <Route path="/signup" element={isAuthenticated ? <Navigate to="/" /> : <Signup />} />
         
+        {/* Public route for certificate verification */}
+        <Route path="/verify-certificate/:certId" element={
+          <Layout>
+            <VerifyCertificate />
+          </Layout>
+        } />
+        <Route path="/verify-certificate" element={
+          <Layout>
+            <VerifyCertificate />
+          </Layout>
+        } />
+        
         {/* Protected routes with layout */}
         <Route path="/" element={
           isAuthenticated ? (
@@ -75,6 +88,7 @@ function App() {
             <Navigate to="/signup" />
           )
         } />
+
         
 
          <Route path="/courses" element={
@@ -120,16 +134,6 @@ function App() {
   )
 } />
 
-        <Route path="/contest" element={
-          isAuthenticated ? (
-            <Layout>
-             <Contest />
-            </Layout>
-          ) : (
-            <Navigate to="/signup" />
-          )
-        } />
-
           <Route path="/leaderboard" element={
           isAuthenticated ? (
             <Layout>
@@ -173,10 +177,20 @@ function App() {
         } />
         
 
-          <Route path="/contact" element={
+          <Route path="/contest" element={
           isAuthenticated ? (
             <Layout>
-              <ContactPage/>
+              <Contest />
+            </Layout>
+          ) : (
+            <Navigate to="/signup" />
+          )
+        } />
+
+        <Route path="/contest/:id" element={
+          isAuthenticated ? (
+            <Layout>
+              <ContestDetail />
             </Layout>
           ) : (
             <Navigate to="/signup" />

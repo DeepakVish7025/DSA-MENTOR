@@ -4,6 +4,9 @@ import { APP_ROUTES, courses } from '../utils/constants'; // Ensure courses is c
 import LectureVideoPlayer from '../components/coursePage/LectureVideoPlayer';
 import RelatedProblemLink from '../components/coursePage/RelatedProblemLink';
 import { VideoCameraIcon, DocumentTextIcon, ChatBubbleLeftEllipsisIcon, PaperClipIcon, ChevronDownIcon, ChevronUpIcon, PuzzlePieceIcon, BookOpenIcon, ArrowLeftIcon, InformationCircleIcon, CheckCircleIcon, CheckBadgeIcon, ArrowRightIcon } from '../components/Icons/CoursesPageIcons';
+import Certificate from '../components/Certificate';
+import { useSelector } from 'react-redux';
+import { Trophy } from 'lucide-react';
 
 const mockDiscussions = [
   {
@@ -28,6 +31,7 @@ const mockDiscussions = [
 const CourseContentPage = () => {
   const { courseId, lectureId } = useParams();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
 
   const [course, setCourse] = useState(null);
   const [currentLecture, setCurrentLecture] = useState(null);
@@ -35,6 +39,25 @@ const CourseContentPage = () => {
   const [isCurriculumSidebarVisible, setIsCurriculumSidebarVisible] = useState(false);
   const [expandedModules, setExpandedModules] = useState({});
   const [completedLectures, setCompletedLectures] = useState({});
+
+  // Load progress from localStorage on mount
+  useEffect(() => {
+    const savedProgress = localStorage.getItem(`course_progress_${courseId}`);
+    if (savedProgress) {
+      try {
+        setCompletedLectures(JSON.parse(savedProgress));
+      } catch (e) {
+        console.error("Error parsing saved progress", e);
+      }
+    }
+  }, [courseId]);
+
+  // Save progress to localStorage whenever it changes
+  useEffect(() => {
+    if (Object.keys(completedLectures).length > 0) {
+      localStorage.setItem(`course_progress_${courseId}`, JSON.stringify(completedLectures));
+    }
+  }, [completedLectures, courseId]);
 
   const TABS_CONFIG = [
     {
@@ -275,6 +298,8 @@ const CourseContentPage = () => {
   const activeTabConfig = TABS_CONFIG.find(t => t.id === activeTab);
 
   const completedCount = Object.values(completedLectures).filter(Boolean).length;
+  // Make completion check more robust
+  const isCourseFullyCompleted = lectureIndexInfo.totalLecturesInCourse > 0 && completedCount >= lectureIndexInfo.totalLecturesInCourse;
   const courseProgress = lectureIndexInfo.totalLecturesInCourse > 0
     ? (completedCount / lectureIndexInfo.totalLecturesInCourse) * 100
     : 0;
@@ -286,9 +311,17 @@ const CourseContentPage = () => {
           <div className="flex items-center justify-between">
             <div>
                 <h1 className="text-2xl md:text-3xl font-extrabold text-purple-700 dark:text-purple-400 truncate leading-tight">{currentLecture.snippet?.title}</h1> {/* Purple heading, larger */}
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                    Part of: <Link to={APP_ROUTES.courseOverview.replace(':courseId', course.id)} className="text-orange-600 dark:text-orange-400 hover:underline hover:text-orange-700 dark:hover:text-orange-300 font-medium">{course.snippet?.title}</Link> {/* Orange link */}
-                </p>
+                <div className="flex items-center gap-4 mt-1">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Part of: <Link to={APP_ROUTES.courseOverview.replace(':courseId', course.id)} className="text-orange-600 dark:text-orange-400 hover:underline hover:text-orange-700 dark:hover:text-orange-300 font-medium">{course.snippet?.title}</Link> {/* Orange link */}
+                  </p>
+                  <div className="flex items-center gap-2 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 rounded-full border border-purple-200 dark:border-purple-800">
+                    <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-purple-500 transition-all duration-500" style={{ width: `${courseProgress}%` }}></div>
+                    </div>
+                    <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400">{Math.round(courseProgress)}%</span>
+                  </div>
+                </div>
             </div>
             <button
               onClick={() => setIsCurriculumSidebarVisible(!isCurriculumSidebarVisible)}
@@ -303,6 +336,25 @@ const CourseContentPage = () => {
 
         <div className="p-4 md:p-8 flex-grow"> {/* Increased padding */}
           <LectureVideoPlayer videoUrl={`https://www.youtube.com/embed/${currentLecture.contentDetails?.videoId}`} title={currentLecture.snippet?.title} />
+
+          {/* Certificate Section for 100% completion */}
+          {isCourseFullyCompleted && (
+            <div className="mt-8 p-8 bg-gradient-to-br from-purple-900/40 to-slate-900/40 border-2 border-orange-500/30 rounded-3xl backdrop-blur-xl flex flex-col items-center text-center shadow-2xl animate-fadeIn">
+              <div className="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20">
+                <Trophy size={40} className="text-white" />
+              </div>
+              <h2 className="text-3xl font-black text-white mb-2">Congratulations, Champion! 🎊</h2>
+              <p className="text-slate-400 max-w-lg mb-8">
+                You have officially mastered all the concepts in <span className="text-orange-400 font-bold">{course.snippet?.title}</span>. 
+                Your dedication has paid off. It's time to claim your well-deserved certification!
+              </p>
+              <Certificate 
+                userName={`${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Valued Student'}
+                courseName={course.snippet?.title}
+                date={new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+              />
+            </div>
+          )}
 
           <div className="mt-6 md:mt-8 flex flex-wrap justify-center items-center gap-4"> {/* Centered buttons, increased gap */}
              <button

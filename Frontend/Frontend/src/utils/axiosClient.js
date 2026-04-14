@@ -1,19 +1,15 @@
+// axiosClient.js
 import axios from 'axios';
 
 const axiosClient = axios.create({
-    baseURL: 'https://leetcode-1-d9rb.onrender.com',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+    withCredentials: true, // MOST IMPORTANT - cookies automatically bhejega
     headers: {
         'Content-Type': 'application/json'
     }
 });
 
-// ✅ interceptor ADD karo
-axiosClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
+// Token interceptor HATA DO - cookies automatically jayengi
+// axiosClient.interceptors.request.use() - YE REMOVE KARO
 
 export default axiosClient;

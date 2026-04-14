@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Trophy } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import Editor from '@monaco-editor/react';
 import axiosClient from "../utils/axiosClient";
@@ -9,6 +10,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Editorial from '../components/Editorial';
 import Loader from '../components/Loader';
+import confetti from 'canvas-confetti';
 
 const langMap = {
   cpp: 'C++',
@@ -31,6 +33,9 @@ const ProblemPage = () => {
   const [mobilePanelTab, setMobilePanelTab] = useState('problem');
   const editorRef = useRef(null);
   const { problemId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const contestId = location.state?.contestId;
   const { handleSubmit } = useForm();
 
   useEffect(() => {
@@ -86,10 +91,22 @@ const ProblemPage = () => {
     setSubmitResult(null);
     toast.info('Submitting solution...', { autoClose: 1500 });
     try {
-      const response = await axiosClient.post(`/submission/submit/${problemId}`, { code, language: selectedLanguage });
+      const response = await axiosClient.post(`/submission/submit/${problemId}`, { 
+        code, 
+        language: selectedLanguage,
+        contestId: contestId
+      });
       setSubmitResult(response.data);
       setActiveRightTab('result');
-      if (response.data.accepted) toast.success('Solution Accepted! 🎉');
+      if (response.data.accepted) {
+        toast.success('Solution Accepted! 🎉');
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#a855f7', '#3b82f6', '#22c55e']
+        });
+      }
       else toast.error('Submission failed. Try again!');
     } catch (error) {
       setSubmitResult({ accepted: false, error: 'Submission failed or network issue.' });
@@ -401,7 +418,23 @@ const ProblemPage = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-900 overflow-hidden">
-      <ToastContainer position="top-right" theme="dark" />
+      <ToastContainer position="top-center" theme="dark" />
+
+      {/* Contest Banner */}
+      {contestId && (
+        <div className="bg-purple-600/20 border-b border-purple-500/30 px-4 py-2 flex items-center justify-center gap-3 shrink-0">
+          <Trophy size={16} className="text-purple-400 animate-bounce" />
+          <span className="text-xs font-bold uppercase tracking-widest text-purple-300">
+            Contest Mode Active — Submissions will be scored
+          </span>
+          <button 
+            onClick={() => navigate(`/contest/${contestId}`)}
+            className="text-[10px] bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded-full font-black transition-all ml-4"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      )}
 
       {/* ── Mobile Top Tab Bar (visible only on small screens) ── */}
       <div className="flex md:hidden border-b border-gray-700 bg-gray-800 shrink-0">

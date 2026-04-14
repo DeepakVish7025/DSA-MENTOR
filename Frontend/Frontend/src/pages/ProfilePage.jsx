@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosClient from "../utils/axiosClient";
 import { Mail, MapPin, Trophy, Flame, Star } from "lucide-react";
 
 function ProfilePage() {
@@ -30,10 +30,7 @@ function ProfilePage() {
 
       try{
 
-        const res = await axios.get(
-          "http://localhost:5000/user/getProfile",
-          {withCredentials:true}
-        )
+        const res = await axiosClient.get("/user/getProfile")
 
         const user = res.data.user
 

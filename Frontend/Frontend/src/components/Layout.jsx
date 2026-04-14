@@ -411,6 +411,7 @@ const Layout = ({ children }) => {
             <NavLink to="/" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Problems</NavLink>
             <NavLink to="/contest" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Contests</NavLink>
             <NavLink to="/leaderboard" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Leaderboard</NavLink>
+            <NavLink to="/verify-certificate" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Verify</NavLink>
             <NavLink to="/documentation" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Documentation</NavLink>
             <NavLink to="/courses" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Courses</NavLink>
             <NavLink to="/interview" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Interview</NavLink>
@@ -424,7 +425,7 @@ const Layout = ({ children }) => {
                 <div className="user-dropdown">
                   <div className="avatar-btn" onClick={toggleDropdown}>
                     <img
-                      src={user.image || `https://avatar.iran.liara.run/public/boy`}
+                      src={user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
                       alt="avatar"
                       className="avatar-img"
                     />
@@ -483,8 +484,8 @@ const Layout = ({ children }) => {
           <div className="mobile-panel">
             <div className="mobile-header">
               <NavLink to="/" className="logo-link" onClick={closeMobileMenu}>
-                <div className="logo-icon">{'<CM>'}</div>
-                <span className="logo-text" style={{ display: 'block' }}>CodeMaster</span>
+                <div className="logo-icon">{'<DM>'}</div>
+                <span className="logo-text" style={{ display: 'block' }}>DSA-MENTOR</span>
               </NavLink>
               <button className="mobile-close-btn" onClick={closeMobileMenu}>
                 <X size={20} />
@@ -493,9 +494,10 @@ const Layout = ({ children }) => {
 
             {/* Mobile Navigation Links */}
             <div className="mobile-nav-links">
-              <NavLink to="/problem" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Problems</NavLink>
-              <NavLink to="/contests" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Contests</NavLink>
+              <NavLink to="/" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Problems</NavLink>
+              <NavLink to="/contest" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Contests</NavLink>
               <NavLink to="/leaderboard" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Leaderboard</NavLink>
+              <NavLink to="/verify-certificate" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Verify Certificate</NavLink>
               <NavLink to="/courses" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Courses</NavLink>
               <NavLink to="/interview" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Interview</NavLink>
 
@@ -510,7 +512,7 @@ const Layout = ({ children }) => {
                 {/* User Info */}
                 <div className="mobile-user-info">
                   <img
-                    src={user.image || `https://avatar.iran.liara.run/public/boy`}
+                    src={user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
                     alt="avatar"
                     className="mobile-avatar"
                   />

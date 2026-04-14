@@ -1,21 +1,58 @@
-const { GoogleGenAI } = require("@google/genai");
 
 
-const solveDoubt = async(req , res)=>{
 
 
-    try{
 
-        const {messages,title,description,testCases,startCode} = req.body;
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_KEY });
-       
-        async function main() {
-        const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: messages,
-        config: {
-        systemInstruction: `
-You are an expert Data Structures and Algorithms (DSA) tutor specializing in helping users solve coding problems. Your role is strictly limited to DSA-related assistance only.
+
+
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
+
+// 🔥 CODE EXTRACTOR
+function extractCode(text) {
+  const match = text.match(/```[\w]*\n([\s\S]*?)```/);
+  return match ? match[1].trim() : null;
+}
+
+const solveDoubt = async (req, res) => {
+  try {
+    const { messages, title, description, testCases, startCode } = req.body;
+
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({
+        message: "Invalid messages format",
+      });
+    }
+
+    // ✅ CLEAN + FORMAT MESSAGES
+    const formattedMessages = messages
+      .filter(
+        (msg) =>
+          msg?.parts?.[0]?.text &&
+          msg.parts[0].text !== "⚠️ Error fetching response"
+      )
+      .slice(-6)
+      .map((msg) => ({
+        role: msg.role === "model" ? "assistant" : "user",
+        content: msg.parts[0].text,
+      }));
+
+    // 🚀 API CALL
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3-8b-instruct",
+          messages: [
+            {
+              role: "system",
+              content: `
+YYou are an expert Data Structures and Algorithms (DSA) tutor specializing in helping users solve coding problems. Your role is strictly limited to DSA-related assistance only.
 
 ## CURRENT PROBLEM CONTEXT:
 [PROBLEM_TITLE]: ${title}
@@ -81,23 +118,46 @@ You are an expert Data Structures and Algorithms (DSA) tutor specializing in hel
 - Promote best coding practices
 
 Remember: Your goal is to help users learn and understand DSA concepts through the lens of the current problem, not just to provide quick answers.
-`},
-    });
-     
-    res.status(201).json({
-        message:response.text
-    });
-    console.log(response.text);
+`,
+            },
+            ...formattedMessages,
+          ],
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(400).json({
+        message: data.error?.message || "API Error",
+        fullError: data,
+      });
     }
 
-    main();
-      
+    const aiText = data?.choices?.[0]?.message?.content;
+
+    if (!aiText) {
+      return res.status(500).json({
+        message: "No response from AI",
+      });
     }
-    catch(err){
-        res.status(500).json({
-            message: "Internal server error"
-        });
-    }
-}
+
+    // 🔥 EXTRACT CLEAN CODE
+    const extractedCode = extractCode(aiText);
+
+    res.json({
+      message: aiText,       // UI ke liye formatted response
+      code: extractedCode || "", // Judge0 ke liye clean code
+    });
+
+  } catch (err) {
+    console.error("SERVER ERROR:", err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
 
 module.exports = solveDoubt;

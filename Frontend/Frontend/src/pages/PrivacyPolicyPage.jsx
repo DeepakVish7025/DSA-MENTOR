@@ -56,7 +56,7 @@ const PrivacyPolicyPage = () => {
       {/* Footer Note */}
       <div className="text-center text-sm text-[#475569] dark:text-[#94a3b8]">
         Last updated: September 8, 2025<br />
-        For questions or concerns, contact us at <span className="text-[#f97316]">dv2591889@gmail.com</span>
+        For questions or concerns, contact us at <span className="text-[#f97316]">anushkavishwakarma98980@gmail.com</span>
       </div>
     </div>
   );

@@ -33,10 +33,11 @@ export const checkAuth = createAsyncThunk(
       const { data } = await axiosClient.get('/user/check');
       return data.user;
     } catch (error) {
+      // If 401, just return null (means not logged in, but not a system error)
       if (error.response?.status === 401) {
-        return rejectWithValue(null); // Special case for no session
+        return null;
       }
-      return rejectWithValue(error);
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );

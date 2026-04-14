@@ -10,11 +10,12 @@ const router = express.Router();
 
 // Initialize Gemini AI
 let genAI = null;
-if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 0) {
-  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const geminiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_KEY;
+if (geminiKey && geminiKey.length > 0) {
+  genAI = new GoogleGenerativeAI(geminiKey);
   console.log("AI Interview: Gemini AI initialized");
 } else {
-  console.log("AI Interview: GEMINI_API_KEY not found - using fallback questions");
+  console.log("AI Interview: GEMINI_API_KEY or GEMINI_KEY not found - using fallback questions");
 }
 
 // Configure multer for recordings

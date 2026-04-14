@@ -1,6 +1,7 @@
-const Problem = require("../models/problem");
+const Problem = require('../models/problem')
 const Submission = require("../models/submission");
-const User = require("../models/user");
+const User = require('../models/user')
+const Contest = require("../models/contest");
 const {getLanguageById,submitBatch,submitToken} = require("../utils/problemUtility");
 
 const submitCode = async (req,res)=>{
@@ -11,7 +12,7 @@ const submitCode = async (req,res)=>{
        const userId = req.result._id;
        const problemId = req.params.id;
 
-       let {code,language} = req.body;
+       let {code,language, contestId} = req.body;
 
       if(!userId||!code||!problemId||!language)
         return res.status(400).send("Some field missing");
@@ -89,6 +90,44 @@ const submitCode = async (req,res)=>{
     submittedResult.memory = memory;
 
     await submittedResult.save();
+    
+    // Update contest score if applicable
+    if (contestId && status === 'accepted') {
+        try {
+            const contest = await Contest.findById(contestId);
+            const now = new Date();
+            
+            if (contest && now >= contest.startTime && now <= contest.endTime) {
+                let participant = contest.participants.find(p => p.user.toString() === userId.toString());
+                
+                // Automatically register if not already registered
+                if (!participant) {
+                    contest.participants.push({ user: userId, score: 0, solvedProblems: [], solvedMcqs: [] });
+                    participant = contest.participants[contest.participants.length - 1];
+                }
+                
+                if (participant) {
+                    const alreadySolved = participant.solvedProblems.some(pid => pid.toString() === problemId.toString());
+                    
+                    if (!alreadySolved) {
+                        const problemConfig = contest.problems.find(p => p.problemId.toString() === problemId.toString());
+                        
+                        if (problemConfig) {
+                            participant.score += problemConfig.points;
+                            participant.solvedProblems.push(problemId);
+                            participant.submissionTime = now;
+                            
+                            // Explicitly mark as modified for Mongoose if needed
+                            contest.markModified('participants');
+                            await contest.save();
+                        }
+                    }
+                }
+            }
+        } catch (contestErr) {
+            console.error("Error updating contest score:", contestErr);
+        }
+    }
     
     // ProblemId ko insert karenge userSchema ke problemSolved mein if it is not persent there.
     

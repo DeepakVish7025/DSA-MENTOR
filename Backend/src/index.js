@@ -14,17 +14,21 @@ const cors = require('cors');
 const aiRouter = require('./routes/aiChatting');
 const videoRouter = require('./routes/videoCreator');
 const interviewRoutes = require('./routes/interviewRoutes');
+const contestRoutes = require("./routes/contestRoutes");
+const certificateRoutes = require("./routes/certificateRoutes");
 
 
-// Middleware
+
+
+
 app.use(cors({
-    // agr ap chahte hai ki koi bhi aceess kr le backend ko to * ka use kr le : 
     origin: 'http://localhost:5173',
-    credentials: true
+    credentials: true 
 }))
 
 app.use(express.json());
 app.use(cookieParser());
+
 
 // Routes
 app.use('/user', authRouter);
@@ -35,23 +39,31 @@ app.use('/video',videoRouter);
 // API routes
 app.use('/api/interview', interviewRoutes);
 
-// Initialization
-const InitializeConnection = async () => {
+app.use("/api/contests", contestRoutes);
+app.use("/api/certificates", certificateRoutes);
+
+const InitalizeConnection = async () => {
     try {
-        await redisClient.connect();
-        console.log("Redis Connected");
-
-        await main(); // DB connection
+        await main();
         console.log("DB Connected");
+        
+        // Start Server first so app is accessible
+        app.listen(process.env.PORT, () => {
+            console.log("Server listening at port number: " + process.env.PORT);
+        });
 
-        const port = process.env.PORT || 3000;
-        app.listen(port, () => {
-            console.log(`Server listening at port number: ${port}`);
+        // Attempt Redis connection in background
+        redisClient.connect().then(() => {
+            console.log("Redis Connected Successfully ⚡");
+        }).catch((err) => {
+            console.error("Redis Connection Error: " + err.message);
+            console.log("Network blocked port. API will still work without Redis.");
         });
 
     } catch (err) {
-        console.error("Error:", err);
+        console.log("Error: " + err);
     }
-};
+}
 
-InitializeConnection();
+
+InitalizeConnection();

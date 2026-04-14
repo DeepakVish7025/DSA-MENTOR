@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Plus, Edit, Trash2, Shield, ArrowRight,Video } from 'lucide-react';
+import { Plus, Edit,Trophy, Trash2, Shield, ArrowRight,Video  } from 'lucide-react';
 
 // --- Card Component for better code organization ---
 const AdminOptionCard = ({ option }) => {
@@ -74,6 +74,13 @@ function Admin() {
       color: 'btn-success',
       bgColor: 'bg-success/10',
       route: '/admin/video'
+    },
+    {
+      id: 'contest',
+      title: 'Contest Arena',
+      description: 'Manage and schedule new coding contests for the community.',
+      icon: Trophy,
+      route: '/contest'
     }
   ];
 

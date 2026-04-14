@@ -1,447 +1,574 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import axiosClient from '../utils/axiosClient';
 import { logoutUser } from '../authSlice';
-import { Heart, Star, RefreshCcw, List, LayoutGrid, BarChart2, CheckCircle, Target, Signal, Dumbbell, BrainCircuit, ChevronRight, Code, Trophy, Tag, BarChart3, Users, Clock, Award, Zap, BookOpen } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import {
+  BarChart2, CheckCircle, Target, Signal, Dumbbell, BrainCircuit,
+  RefreshCcw, List, LayoutGrid, Search, ChevronRight, Zap, Trophy, Code2
+} from 'lucide-react';
 import FeaturesSection from './hero';
 
 // ===================================================================================
-//  HELPER & SHARED COMPONENTS
+//  GLOBAL STYLES — inject once
 // ===================================================================================
+const GlobalStyles = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
-/**
- * Generic Icon Component
- */
-const Icon = ({ d, pathProps, className, viewBox, isOutline, svgProps }) => (
-    <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        viewBox={viewBox || "0 0 20 20"} 
-        fill={isOutline ? "none" : "currentColor"} 
-        stroke={isOutline ? "currentColor" : "none"} 
-        strokeWidth={isOutline ? 1.5 : 0}
-        className={className} 
-        {...svgProps}
-    >
-        <path strokeLinecap="round" strokeLinejoin="round" {...pathProps} d={d} />
-    </svg>
-);
-
-/**
- * Search Bar Component
- */
-const SearchBar = ({ searchTerm, onSearchChange, placeholder, className }) => (
-  <div className={className}>
-    <label className="block text-sm font-medium text-gray-400 mb-1">
-      Search
-    </label>
-    <input
-      type="text"
-      placeholder={placeholder || "Search..."}
-      value={searchTerm}
-      onChange={onSearchChange}
-      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-md focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-100 placeholder-gray-500"
-    />
-  </div>
-);
-
-/**
- * Dropdown Component
- */
-const Dropdown = ({ label, options, selectedValue, onSelect, className }) => (
-  <div className={className}>
-    <label className="block text-sm font-medium text-gray-400 mb-1">
-      {label}
-    </label>
-    <select
-      value={selectedValue}
-      onChange={(e) => onSelect(e.target.value)}
-      className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-md focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-100 appearance-none"
-    >
-      {options.map(option => (
-        <option key={option.value} value={option.value} className="bg-gray-800 text-gray-100">{option.label}</option>
-      ))}
-    </select>
-  </div>
-);
-
-// ===================================================================================
-//  UI SECTION COMPONENTS
-// ===================================================================================
-
-/**
- * User Stats Component (Left Sidebar)
- */
-const UserStats = ({ stats, onStatusChange, onDifficultyChange }) => {
-  const ProgressBarStat = ({ value, total, colorClass, title, icon }) => {
-    const percentage = total > 0 ? (value / total) * 100 : 0;
-    return (
-      <button
-        onClick={() => onDifficultyChange(title)}
-        className="w-full text-left p-3 rounded-lg group hover:bg-gray-800/50 transition-colors"
-      >
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center">
-            <div className="mr-2">{icon}</div>
-            <span className="font-semibold text-sm text-gray-200">{title}</span>
-          </div>
-          <span className="text-xs font-mono text-gray-400">{value}/{total}</span>
-        </div>
-        <div className="w-full bg-gray-700 rounded-full h-2">
-          <div className={`${colorClass} h-2 rounded-full transition-all duration-500`} style={{ width: `${percentage}%` }}></div>
-        </div>
-      </button>
-    );
-  };
-
-  return (
-    <div className=" rounded-xl shadow-xl p-6 border border-gray-800">
-      <h3 className="text-xl font-bold text-gray-200 mb-4 flex items-center">
-        <BarChart2 size={22} className="mr-3 text-green-500" />
-        My Stats
-      </h3>
-      <div className="text-center mb-6">
-        <p className="text-sm text-gray-400">Total Solved</p>
-        <p className="text-5xl font-extrabold text-gray-200">
-          {stats.solved}<span className="text-2xl font-medium text-gray-400">/{stats.total}</span>
-        </p>
-      </div>
-      <div className="space-y-2">
-        <button onClick={() => onStatusChange('Solved')} className="w-full flex justify-between items-center p-3 rounded-lg bg-gray-800/50 group transition-colors">
-          <div className="flex items-center"><CheckCircle size={20} className="mr-3 text-green-500" /><span className="text-gray-200">Solved</span></div>
-          <span className="font-bold text-gray-200">{stats.solved}</span>
-        </button>
-         <button onClick={() => onStatusChange('Attempted')} className="w-full flex justify-between items-center p-3 rounded-lg bg-gray-800/50 group transition-colors">
-          <div className="flex items-center"><Target size={20} className="mr-3 text-yellow-500" /><span className="text-gray-200">Attempted</span></div>
-          <span className="font-bold text-gray-200">{stats.attempted}</span>
-        </button>
-      </div>
-      <div className="my-4 border-t border-gray-700"></div>
-      <h4 className="font-semibold text-gray-200 mb-3">Difficulty Breakdown</h4>
-      <div className="space-y-3">
-        <ProgressBarStat title="Easy" icon={<Signal size={16} className="text-green-500" />} value={stats.solvedByDifficulty.Easy} total={stats.totalByDifficulty.Easy} onDifficultyChange={onDifficultyChange} colorClass="bg-green-500" />
-        <ProgressBarStat title="Medium" icon={<Dumbbell size={16} className="text-yellow-500" />} value={stats.solvedByDifficulty.Medium} total={stats.totalByDifficulty.Medium} onDifficultyChange={onDifficultyChange} colorClass="bg-yellow-500" />
-        <ProgressBarStat title="Hard" icon={<BrainCircuit size={16} className="text-red-500" />} value={stats.solvedByDifficulty.Hard} total={stats.totalByDifficulty.Hard} onDifficultyChange={onDifficultyChange} colorClass="bg-red-500" />
-      </div>
-    </div>
-  );
-};
-
-/**
- * Problem Filters Component (Main Content Top)
- */
-const ProblemFilters = ({ viewMode, setViewMode, noProblems, topics, difficulties, statuses, searchTerm, selectedTopic, selectedDifficulty, selectedStatus, onSearchChange, onTopicChange, onDifficultyChange, onStatusChange, onResetFilters }) => {
-  const ViewToggleButton = ({ mode, currentMode, label, icon }) => (
-    <button onClick={() => setViewMode(mode)} className={`p-1.5 rounded-md ${currentMode === mode ? 'bg-green-500 text-gray-900' : 'bg-transparent text-gray-400 hover:bg-gray-800'}`} aria-label={`Switch to ${label} view`}>
-      {icon}
-    </button>
-  );
-
-  return (
-    <div className="p-6  rounded-xl shadow-xl border border-gray-800">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h2 className="text-lg font-semibold text-gray-200">Filter & Sort <span className="text-sm font-normal text-gray-400">{`(${noProblems})`}</span></h2>
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={onResetFilters} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-semibold bg-gray-800 border border-gray-700 text-gray-200 hover:bg-gray-700 transition-colors">
-            <RefreshCcw size={16} />
-          </button>
-          <div className="flex items-center p-1 gap-1.5 bg-gray-800 rounded-lg border border-gray-700">
-            <ViewToggleButton mode="list" currentMode={viewMode} label="List" icon={<List size={20} />} />
-            <ViewToggleButton mode="grid" currentMode={viewMode} label="Grid" icon={<LayoutGrid size={20} />} />
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
-        <SearchBar searchTerm={searchTerm} onSearchChange={onSearchChange} className="sm:col-span-2 lg:col-span-4" placeholder="Search by title..." />
-        <Dropdown label="Difficulty" options={difficulties} selectedValue={selectedDifficulty} onSelect={onDifficultyChange} className="w-full" />
-        <Dropdown label="Status" options={statuses} selectedValue={selectedStatus} onSelect={onStatusChange} className="w-full" />
-        <Dropdown label="Topic" options={topics} selectedValue={selectedTopic} onSelect={onTopicChange} className="w-full sm:col-span-2" />
-      </div>
-    </div>
-  );
-};
-
-/**
- * Problems Table Component (List View)
- */
-const ProblemsTable = ({ problems }) => {
-  const difficultyStyles = { 
-    Easy: 'bg-green-500/20 text-green-400 border-green-500/30', 
-    Medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', 
-    Hard: 'bg-red-500/20 text-red-400 border-red-500/30' 
-  };
-  
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Solved': return <Icon d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" pathProps={{ fillRule: "evenodd", clipRule: "evenodd" }} className="w-5 h-5 text-green-500" />;
-      default: return <Icon d="M10 18a8 8 0 100-16 8 8 0 000 16zm-4-8a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0z" pathProps={{ fillRule: "evenodd", clipRule: "evenodd" }} className="w-5 h-5 text-gray-500" />;
+    :root {
+      --green: #22c55e;
+      --green-dim: rgba(34,197,94,0.15);
+      --green-glow: rgba(34,197,94,0.4);
+      --yellow: #eab308;
+      --red: #ef4444;
+      --bg: #090e12;
+      --surface: rgba(255,255,255,0.03);
+      --border: rgba(255,255,255,0.07);
+      --border-hover: rgba(34,197,94,0.35);
+      --text: #e2e8f0;
+      --muted: #64748b;
     }
-  };
 
-  if (problems.length === 0) {
-     return (
-       <div className="text-center py-12 px-6  rounded-xl shadow-xl border border-gray-800">
-         <h3 className="text-xl font-semibold text-gray-200">No Problems Found</h3>
-         <p className="mt-1 text-sm text-gray-400">Try adjusting your filter criteria.</p>
-       </div>
-     );
-  }
+    .hp-root * { box-sizing: border-box; }
+    .hp-root { font-family: 'Space Grotesk', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Scanline texture */
+    .hp-root::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    }
+
+    /* Animated gradient orbs */
+    .orb {
+      position: fixed; border-radius: 50%; filter: blur(80px);
+      animation: drift 12s ease-in-out infinite alternate;
+      pointer-events: none; z-index: 0;
+    }
+    .orb-1 { width: 500px; height: 500px; top: -100px; left: -100px; background: radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 70%); }
+    .orb-2 { width: 400px; height: 400px; bottom: 20%; right: -100px; background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%); animation-delay: -6s; }
+    @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.05); } }
+
+    /* Stat block */
+    .stat-block {
+      position: relative; overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .stat-block::before {
+      content: ''; position: absolute; inset: 0; border-radius: 16px;
+      background: linear-gradient(135deg, rgba(34,197,94,0.05) 0%, transparent 60%);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .stat-block:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+    .stat-block:hover::before { opacity: 1; }
+
+    /* Big number pulse */
+    @keyframes countUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .count-animate { animation: countUp 0.6s ease forwards; }
+
+    /* Progress ring */
+    .ring-track { fill: none; stroke: rgba(255,255,255,0.06); }
+    .ring-fill { fill: none; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1); transform: rotate(-90deg); transform-origin: center; }
+
+    /* Difficulty pill */
+    .pill-easy  { background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+    .pill-medium{ background: rgba(234,179,8,0.12);  color: #facc15; border: 1px solid rgba(234,179,8,0.25); }
+    .pill-hard  { background: rgba(239,68,68,0.12);  color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+
+    /* Problem row */
+    .prob-row {
+      display: grid; grid-template-columns: 36px 1fr auto auto;
+      align-items: center; gap: 16px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+      animation: rowIn 0.4s ease both;
+    }
+    .prob-row:last-child { border-bottom: none; }
+    .prob-row:hover { background: rgba(34,197,94,0.04); }
+    @keyframes rowIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Grid card */
+    .prob-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px;
+      display: flex; flex-direction: column; gap: 12px;
+      position: relative; overflow: hidden;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+      animation: cardIn 0.5s ease both;
+    }
+    .prob-card::after {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--green), transparent);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.35s ease;
+    }
+    .prob-card:hover { transform: translateY(-4px); border-color: var(--border-hover); box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(34,197,94,0.1); }
+    .prob-card:hover::after { transform: scaleX(1); }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Input / select */
+    .hp-input, .hp-select {
+      width: 100%; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 14px;
+      color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 14px;
+      outline: none; transition: border-color 0.25s, box-shadow 0.25s;
+      appearance: none;
+    }
+    .hp-input:focus, .hp-select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+    .hp-input::placeholder { color: var(--muted); }
+    .hp-select option { background: #111; }
+
+    /* Toggle btn */
+    .toggle-btn {
+      padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); cursor: pointer;
+      transition: all 0.2s;
+    }
+    .toggle-btn.active { background: var(--green); color: #000; border-color: var(--green); }
+    .toggle-btn:not(.active):hover { border-color: var(--border-hover); color: var(--text); }
+
+    /* Reset btn */
+    .reset-btn {
+      padding: 8px 14px; border-radius: 8px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 6px;
+      font-size: 13px; transition: all 0.2s;
+    }
+    .reset-btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+    /* Section heading accent */
+    .section-label {
+      font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--green); font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Glowing dot */
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+      box-shadow: 0 0 8px var(--green-glow);
+      animation: pulse-dot 2s ease infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { box-shadow: 0 0 6px var(--green-glow); }
+      50% { box-shadow: 0 0 14px var(--green-glow), 0 0 28px rgba(34,197,94,0.2); }
+    }
+
+    /* Progress bar */
+    .pbar-track { background: rgba(255,255,255,0.06); border-radius: 99px; height: 4px; overflow: hidden; }
+    .pbar-fill { height: 100%; border-radius: 99px; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+
+    /* Tag chip */
+    .tag-chip {
+      font-size: 11px; padding: 2px 8px; border-radius: 6px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--muted); white-space: nowrap;
+    }
+
+    /* Solved icon glow */
+    .solved-icon { filter: drop-shadow(0 0 4px rgba(34,197,94,0.6)); }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center; padding: 64px 24px;
+      border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;
+    }
+
+    /* Staggered row animation delays */
+    ${Array.from({length:30},(_,i)=>`.prob-row:nth-child(${i+1}){animation-delay:${i*0.04}s}`).join('')}
+    ${Array.from({length:30},(_,i)=>`.prob-card:nth-child(${i+1}){animation-delay:${i*0.06}s}`).join('')}
+  `}</style>
+);
+
+// ===================================================================================
+//  RING PROGRESS
+// ===================================================================================
+const RingProgress = ({ value, total, color, size = 80, stroke = 6 }) => {
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const pct = total > 0 ? value / total : 0;
+  const offset = circ * (1 - pct);
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle className="ring-track" cx={size/2} cy={size/2} r={r} strokeWidth={stroke} />
+      <circle className="ring-fill" cx={size/2} cy={size/2} r={r} strokeWidth={stroke}
+        stroke={color} strokeDasharray={circ} strokeDashoffset={offset} />
+    </svg>
+  );
+};
+
+// ===================================================================================
+//  USER STATS SIDEBAR
+// ===================================================================================
+const UserStats = ({ stats, onStatusChange, onDifficultyChange }) => {
+  const diffs = [
+    { key: 'Easy',   color: '#22c55e', icon: <Signal size={13}/> },
+    { key: 'Medium', color: '#eab308', icon: <Dumbbell size={13}/> },
+    { key: 'Hard',   color: '#ef4444', icon: <BrainCircuit size={13}/> },
+  ];
 
   return (
-    <div className=" shadow-xl rounded-xl overflow-x-auto border border-gray-800">
-      <table className="w-full text-sm text-left text-gray-400">
-        <thead className="text-xs uppercase bg-gray-800/50 text-gray-300">
-          <tr>
-            <th scope="col" className="px-6 py-4">Status</th>
-            <th scope="col" className="px-6 py-4">Title</th>
-            <th scope="col" className="px-6 py-4">Difficulty</th>
-            <th scope="col" className="px-6 py-4">Topics</th>
-          </tr>
-        </thead>
-        <tbody>
-          {problems.map((problem) => (
-            <tr key={problem._id} className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
-              <td className="px-6 py-4" title={problem.status}>{getStatusIcon(problem.status)}</td>
-              <th scope="row" className="px-6 py-4 font-medium text-gray-200 whitespace-nowrap">
-                <NavLink to={`/problem/${problem._id}`} className="hover:text-green-400 transition-colors">{problem.title}</NavLink>
-              </th>
-              <td className="px-6 py-4">
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${difficultyStyles[problem.difficulty]}`}>
-                  {problem.difficulty}
-                </span>
-              </td>
-              <td className="px-6 py-4">
-                <div className="flex flex-wrap gap-1.5">
-                  {problem.tags.map((tag) => (
-                    <span key={tag} className="bg-gray-800 px-2 py-0.5 text-xs rounded text-gray-300 border border-gray-700">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </td>
-            </tr>
+    <div style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* Total solved */}
+      <div className="stat-block" style={{ padding: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <span className="section-label">Progress</span>
+          <div className="live-dot" />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <RingProgress value={stats.solved} total={stats.total} color="#22c55e" size={80} stroke={5} />
+            <div style={{ position: 'absolute', textAlign: 'center' }}>
+              <div className="mono count-animate" style={{ fontSize: 16, fontWeight: 700, color: '#22c55e', lineHeight: 1 }}>{stats.solved}</div>
+              <div style={{ fontSize: 9, color: 'var(--muted)' }}>/{stats.total}</div>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>Total solved</div>
+            <div className="mono" style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>
+              {stats.total > 0 ? Math.round((stats.solved/stats.total)*100) : 0}<span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 400 }}>%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Status pills */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[
+            { label: 'Solved', val: stats.solved, icon: <CheckCircle size={13}/>, color: '#22c55e', status: 'Solved' },
+            { label: 'Attempted', val: stats.attempted, icon: <Target size={13}/>, color: '#eab308', status: 'Attempted' },
+          ].map(s => (
+            <button key={s.label} onClick={() => onStatusChange(s.status)}
+              style={{
+                flex: 1, padding: '10px 8px', border: '1px solid var(--border)',
+                borderRadius: 10, background: 'rgba(255,255,255,0.02)', cursor: 'pointer',
+                transition: 'all 0.2s', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = s.color}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+            >
+              <span style={{ color: s.color }}>{s.icon}</span>
+              <span className="mono" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{s.val}</span>
+              <span style={{ fontSize: 11, color: 'var(--muted)' }}>{s.label}</span>
+            </button>
           ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-/**
- * Problem Card Component (for Grid View)
- */
-const ProblemCard = ({ problem }) => {
-    const getDifficultyClass = (difficulty) => {
-        switch (difficulty) {
-            case 'Easy': return 'bg-green-900/30 text-green-400 border-green-700';
-            case 'Medium': return 'bg-yellow-900/30 text-yellow-400 border-yellow-700';
-            case 'Hard': return 'bg-red-900/30 text-red-400 border-red-700';
-            default: return 'bg-gray-800 text-gray-400 border-gray-700';
-        }
-    };
-    
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'Solved': return <Icon d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" pathProps={{ fillRule: 'evenodd', clipRule: 'evenodd' }} className="w-5 h-5 text-green-500" />;
-            default: return <Icon d="M10 18a8 8 0 100-16 8 8 0 000 16zm-4-8a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0z" pathProps={{ fillRule: 'evenodd', clipRule: 'evenodd' }} className="w-5 h-5 text-gray-500" />;
-        }
-    };
-
-    return (
-        <NavLink to={`/problem/${problem._id}`} className=" rounded-xl shadow-xl border border-gray-800 p-5 flex flex-col h-full transition-[transform,box-shadow] duration-300 hover:shadow-2xl hover:-translate-y-1 hover:border-green-500/30">
-            <div className="flex items-start justify-between mb-3">
-                <span className="font-semibold text-gray-400 text-sm">Problem</span>
-                <div title={problem.status}>{getStatusIcon(problem.status)}</div>
-            </div>
-            <div className="flex-grow">
-                <h3 className="text-lg font-bold text-gray-200 mb-3">{problem.title}</h3>
-            </div>
-            <div className="flex-shrink-0">
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {problem.tags.slice(0, 2).map((tag) => (
-                        <span key={tag} className="flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-800 text-gray-300 border border-gray-700">
-                            {tag}
-                        </span>
-                    ))}
-                    {problem.tags.length > 2 && (
-                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-800 text-gray-400 border border-gray-700">
-                            +{problem.tags.length - 2}
-                        </span>
-                    )}
-                </div>
-                <div className={`text-sm font-semibold px-3 py-1 rounded-full text-center border ${getDifficultyClass(problem.difficulty)}`}>
-                    {problem.difficulty}
-                </div>
-            </div>
-        </NavLink>
-    );
-};
-
-/**
- * Problems Grid Component (Grid View)
- */
-
-
-/**
- * Problems Grid Component (Grid View)
- */
-const ProblemsGrid = ({ problems }) => {
-  if (problems.length === 0) {
-    return (
-      <div className="text-center py-24 bg-gray-800 border border-gray-700 rounded-xl flex flex-col items-center justify-center">
-        <p className="text-xl font-medium text-white">No Problems Found</p>
-        <p className="mt-2 text-gray-400">Try selecting a different filter.</p>
+        </div>
       </div>
-    );
-  }
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {problems.map((problem) => <ProblemCard key={problem._id} problem={problem} />)}
+
+      {/* Difficulty breakdown */}
+      <div className="stat-block" style={{ padding: 24 }}>
+        <span className="section-label" style={{ display: 'block', marginBottom: 16 }}>Difficulty</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {diffs.map(d => {
+            const solved = stats.solvedByDifficulty[d.key];
+            const total  = stats.totalByDifficulty[d.key];
+            const pct = total > 0 ? (solved/total)*100 : 0;
+            return (
+              <button key={d.key} onClick={() => onDifficultyChange(d.key)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: d.color, fontSize: 13, fontWeight: 500 }}>
+                    {d.icon} {d.key}
+                  </div>
+                  <span className="mono" style={{ fontSize: 12, color: 'var(--muted)' }}>{solved}/{total}</span>
+                </div>
+                <div className="pbar-track">
+                  <div className="pbar-fill" style={{ width: `${pct}%`, background: d.color, opacity: 0.85 }} />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Quick tip */}
+      <div style={{
+        border: '1px solid rgba(34,197,94,0.2)', borderRadius: 14,
+        padding: '14px 18px', background: 'rgba(34,197,94,0.04)',
+        display: 'flex', alignItems: 'flex-start', gap: 12
+      }}>
+        <Zap size={16} style={{ color: '#22c55e', flexShrink: 0, marginTop: 2 }} />
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 3 }}>Daily Streak</div>
+          <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>Solve at least one problem today to keep your streak alive.</div>
+        </div>
+      </div>
     </div>
   );
 };
 
-
 // ===================================================================================
-//  MAIN HOMEPAGE COMPONENT
+//  FILTERS BAR
 // ===================================================================================
-
-function Homepage() {
-  const CODE_BRACKET_ICON_PATH = "M14 6H6a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V8a2 2 0 00-2-2zM9 13.5a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2a.5.5 0 01.5.5zm4 0a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2a.5.5 0 01.5.5zm-2-3a.5.5 0 01-.5.5h-2a.5.5 0 010-1h2a.5.5 0 01.5.5z";
-  const CHART_BAR_ICON_PATH = "M3 13h8V3H3v10zm0 4h8v-2H3v2zm10 0h8v-6h-8v6zm0-8h8V7h-8v2z";
-  const TAG_ICON_PATH = "M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z";
-  const TROPHY_ICON_PATH = "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z";
-
-  // Feature Card Component
-  const FeatureCard = ({ iconPath, title, description, gradient }) => (
-  <div className="bg-gray-800 rounded-xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-700 hover:border-purple-600 group">
-    <div className={`p-3 rounded-full inline-flex items-center justify-center mb-6 bg-gradient-to-br ${gradient}`}>
-      <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
-      </svg>
+const ProblemFilters = ({
+  viewMode, setViewMode, noProblems, topics, difficulties, statuses,
+  searchTerm, selectedTopic, selectedDifficulty, selectedStatus,
+  onSearchChange, onTopicChange, onDifficultyChange, onStatusChange, onResetFilters
+}) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    {/* Top row */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <span className="section-label" style={{ marginRight: 'auto' }}>
+        Problems <span className="mono" style={{ fontSize: 12, color: 'var(--muted)' }}>({noProblems})</span>
+      </span>
+      <button className="reset-btn" onClick={onResetFilters}><RefreshCcw size={13}/> Reset</button>
+      <div style={{ display: 'flex', gap: 4 }}>
+        <button className={`toggle-btn${viewMode==='list'?' active':''}`} onClick={() => setViewMode('list')} aria-label="List view"><List size={17}/></button>
+        <button className={`toggle-btn${viewMode==='grid'?' active':''}`} onClick={() => setViewMode('grid')} aria-label="Grid view"><LayoutGrid size={17}/></button>
+      </div>
     </div>
-    <h3 className="text-2xl font-bold text-white mb-3">{title}</h3>
-    <p className="text-gray-300 leading-relaxed">{description}</p>
+
+    {/* Filter inputs */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 10, alignItems: 'end' }}>
+      {/* Search */}
+      <div style={{ position: 'relative' }}>
+        <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', pointerEvents: 'none' }} />
+        <input className="hp-input" style={{ paddingLeft: 34 }} placeholder="Search problems..." value={searchTerm} onChange={onSearchChange} />
+      </div>
+      <select className="hp-select" style={{ width: 130 }} value={selectedDifficulty} onChange={e => onDifficultyChange(e.target.value)}>
+        {difficulties.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+      <select className="hp-select" style={{ width: 120 }} value={selectedStatus} onChange={e => onStatusChange(e.target.value)}>
+        {statuses.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+      <select className="hp-select" style={{ width: 140 }} value={selectedTopic} onChange={e => onTopicChange(e.target.value)}>
+        {topics.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
   </div>
 );
 
+// ===================================================================================
+//  STATUS ICON
+// ===================================================================================
+const StatusIcon = ({ status }) =>
+  status === 'Solved'
+    ? <CheckCircle size={16} style={{ color: '#22c55e' }} className="solved-icon" />
+    : <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1.5px solid var(--muted)' }} />;
+
+// ===================================================================================
+//  PROBLEMS TABLE (LIST VIEW)
+// ===================================================================================
+const ProblemsTable = ({ problems }) => {
+  if (!problems.length) return (
+    <div className="empty-state">
+      <Code2 size={32} style={{ color: 'var(--muted)', marginBottom: 12 }} />
+      <p style={{ color: 'var(--text)', fontSize: 16, fontWeight: 600 }}>No problems found</p>
+      <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>Try adjusting your filters.</p>
+    </div>
+  );
+
+  return (
+    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)' }}>
+      {/* Header */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '36px 1fr auto auto',
+        gap: 16, padding: '10px 20px',
+        background: 'rgba(255,255,255,0.02)',
+        borderBottom: '1px solid var(--border)'
+      }}>
+        {['','Title','Difficulty','Topics'].map((h,i) => (
+          <span key={i} style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', fontFamily: 'JetBrains Mono' }}>{h}</span>
+        ))}
+      </div>
+
+      {/* Rows */}
+      {problems.map((p, idx) => (
+        <NavLink key={p._id} to={`/problem/${p._id}`} style={{ textDecoration: 'none' }}>
+          <div className="prob-row" style={{ animationDelay: `${idx * 0.04}s` }}>
+            <StatusIcon status={p.status} />
+            <span style={{ color: 'var(--text)', fontWeight: 500, fontSize: 14, transition: 'color 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.color='#22c55e'}
+              onMouseLeave={e => e.currentTarget.style.color='var(--text)'}
+            >{p.title}</span>
+            <span className={`pill-${p.difficulty.toLowerCase()}`} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 99, whiteSpace: 'nowrap' }}>
+              {p.difficulty}
+            </span>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 220 }}>
+              {p.tags.slice(0,2).map(t => <span key={t} className="tag-chip">{t}</span>)}
+              {p.tags.length > 2 && <span className="tag-chip">+{p.tags.length-2}</span>}
+            </div>
+          </div>
+        </NavLink>
+      ))}
+    </div>
+  );
+};
+
+// ===================================================================================
+//  PROBLEMS GRID
+// ===================================================================================
+const ProblemsGrid = ({ problems }) => {
+  if (!problems.length) return (
+    <div className="empty-state">
+      <Code2 size={32} style={{ color: 'var(--muted)', marginBottom: 12 }} />
+      <p style={{ color: 'var(--text)', fontSize: 16, fontWeight: 600 }}>No problems found</p>
+      <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>Try adjusting your filters.</p>
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+      {problems.map((p, idx) => {
+        const diffColor = { Easy: '#22c55e', Medium: '#eab308', Hard: '#ef4444' }[p.difficulty] || 'var(--muted)';
+        return (
+          <NavLink key={p._id} to={`/problem/${p._id}`} style={{ textDecoration: 'none' }}>
+            <div className="prob-card" style={{ animationDelay: `${idx * 0.06}s` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className={`pill-${p.difficulty.toLowerCase()}`} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 99 }}>
+                  {p.difficulty}
+                </span>
+                <StatusIcon status={p.status} />
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', lineHeight: 1.4, flex: 1 }}>{p.title}</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {p.tags.slice(0,3).map(t => <span key={t} className="tag-chip">{t}</span>)}
+                {p.tags.length > 3 && <span className="tag-chip">+{p.tags.length-3}</span>}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: diffColor, fontSize: 12 }}>
+                <ChevronRight size={13}/> Solve now
+              </div>
+            </div>
+          </NavLink>
+        );
+      })}
+    </div>
+  );
+};
+
+// ===================================================================================
+//  MAIN HOMEPAGE
+// ===================================================================================
+function Homepage() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
 
-  // --- STATE MANAGEMENT ---
   const [problems, setProblems] = useState([]);
-  
   const [solvedProblemIds, setSolvedProblemIds] = useState(new Set());
   const [filters, setFilters] = useState({ difficulty: 'All', tag: 'All', status: 'All', search: '' });
   const [viewMode, setViewMode] = useState('list');
 
-  // --- DATA FETCHING ---
   useEffect(() => {
     const fetchProblems = async () => {
       try {
         const { data } = await axiosClient.get('/problem/getAllProblem');
-        // Standardize difficulty and tags on fetch
-        const standardizedData = data.map(p => ({
-            ...p,
-            difficulty: p.difficulty.charAt(0).toUpperCase() + p.difficulty.slice(1), // Capitalize (e.g., easy -> Easy)
-            tags: Array.isArray(p.tags) ? p.tags : [p.tags] // Ensure tags is an array
+        const standardized = data.map(p => ({
+          ...p,
+          difficulty: p.difficulty.charAt(0).toUpperCase() + p.difficulty.slice(1),
+          tags: Array.isArray(p.tags) ? p.tags : [p.tags]
         }));
-        setProblems(standardizedData);
-      } catch (error) { console.error('Error fetching problems:', error); }
+        setProblems(standardized);
+      } catch (e) { console.error(e); }
     };
-
-    const fetchSolvedProblems = async () => {
+    const fetchSolved = async () => {
       if (!user) return;
       try {
         const { data } = await axiosClient.get('/problem/problemSolvedByUser');
         setSolvedProblemIds(new Set(data.map(p => p._id)));
-      } catch (error) { console.error('Error fetching solved problems:', error);
-        console.log("RESPONSE:", error?.response);
-  console.log("STATUS:", error?.response?.status);
-  console.log("MESSAGE:", error?.response?.data);
-       }
+      } catch (e) { console.error(e); }
     };
-
     fetchProblems();
-    fetchSolvedProblems();
+    fetchSolved();
   }, [user]);
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
-    setSolvedProblemIds(new Set());
-  };
-
-  // --- DATA PREPARATION & FILTERING ---
   const filteredProblems = problems
     .map(p => ({ ...p, status: solvedProblemIds.has(p._id) ? 'Solved' : 'Todo' }))
     .filter(p => {
-      const difficultyMatch = filters.difficulty === 'All' || p.difficulty === filters.difficulty;
-      const tagMatch = filters.tag === 'All' || p.tags.includes(filters.tag);
-      const statusMatch = filters.status === 'All' || p.status === filters.status;
-      const searchMatch = p.title.toLowerCase().includes(filters.search.toLowerCase());
-      return difficultyMatch && tagMatch && statusMatch && searchMatch;
+      const dm = filters.difficulty === 'All' || p.difficulty === filters.difficulty;
+      const tm = filters.tag === 'All' || p.tags.includes(filters.tag);
+      const sm = filters.status === 'All' || p.status === filters.status;
+      const qm = p.title.toLowerCase().includes(filters.search.toLowerCase());
+      return dm && tm && sm && qm;
     });
 
-  // Data for UserStats component
   const userStats = {
     solved: solvedProblemIds.size,
     total: problems.length,
-    attempted: 0, // Placeholder
+    attempted: 0,
     solvedByDifficulty: {
-      Easy: problems.filter(p => p.difficulty === 'Easy' && solvedProblemIds.has(p._id)).length,
+      Easy:   problems.filter(p => p.difficulty === 'Easy'   && solvedProblemIds.has(p._id)).length,
       Medium: problems.filter(p => p.difficulty === 'Medium' && solvedProblemIds.has(p._id)).length,
-      Hard: problems.filter(p => p.difficulty === 'Hard' && solvedProblemIds.has(p._id)).length,
+      Hard:   problems.filter(p => p.difficulty === 'Hard'   && solvedProblemIds.has(p._id)).length,
     },
     totalByDifficulty: {
-      Easy: problems.filter(p => p.difficulty === 'Easy').length,
+      Easy:   problems.filter(p => p.difficulty === 'Easy').length,
       Medium: problems.filter(p => p.difficulty === 'Medium').length,
-      Hard: problems.filter(p => p.difficulty === 'Hard').length,
+      Hard:   problems.filter(p => p.difficulty === 'Hard').length,
     },
   };
 
-  // Data for Filter dropdowns
-  const topics = [{ label: 'All Topics', value: 'All' }, ...Array.from(new Set(problems.flatMap(p => p.tags))).map(tag => ({ label: tag, value: tag }))];
-  const difficulties = [{ label: 'All Difficulties', value: 'All' }, { label: 'Easy', value: 'Easy' }, { label: 'Medium', value: 'Medium' }, { label: 'Hard', value: 'Hard' }];
-  const statuses = [{ label: 'All Statuses', value: 'All' }, { label: 'Solved', value: 'Solved' }, { label: 'Todo', value: 'Todo' }];
+  const topics     = [{ label: 'All Topics', value: 'All' }, ...Array.from(new Set(problems.flatMap(p => p.tags))).map(t => ({ label: t, value: t }))];
+  const difficulties = [{ label: 'All', value: 'All' }, { label: 'Easy', value: 'Easy' }, { label: 'Medium', value: 'Medium' }, { label: 'Hard', value: 'Hard' }];
+  const statuses   = [{ label: 'All', value: 'All' }, { label: 'Solved', value: 'Solved' }, { label: 'Todo', value: 'Todo' }];
 
-  const handleResetFilters = () => setFilters({ difficulty: 'All', tag: 'All', status: 'All', search: '' });
-
-  // --- RENDER ---
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <aside className="lg:col-span-3 space-y-8">
-          <UserStats stats={userStats} onStatusChange={(status) => setFilters(prev => ({ ...prev, status }))} onDifficultyChange={(difficulty) => setFilters(prev => ({ ...prev, difficulty }))} />
-        </aside>
-        <main className="lg:col-span-9 space-y-8 ">
-          <ProblemFilters
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            noProblems={filteredProblems.length}
-            topics={topics}
-            difficulties={difficulties}
-            statuses={statuses}
-            searchTerm={filters.search}
-            selectedTopic={filters.tag}
-            selectedDifficulty={filters.difficulty}
-            selectedStatus={filters.status}
-            onSearchChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-            onTopicChange={(topic) => setFilters(prev => ({ ...prev, tag: topic }))}
-            onDifficultyChange={(difficulty) => setFilters(prev => ({ ...prev, difficulty }))}
-            onStatusChange={(status) => setFilters(prev => ({ ...prev, status }))}
-            onResetFilters={handleResetFilters}
+    <div className="hp-root" style={{ minHeight: '100vh', position: 'relative' }}>
+      <GlobalStyles />
+
+      {/* Ambient orbs */}
+      <div className="orb orb-1" />
+      <div className="orb orb-2" />
+
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1280, margin: '0 auto', padding: '32px 24px' }}>
+
+        {/* ── Layout ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 28, alignItems: 'start' }}>
+
+          {/* Sidebar */}
+          <UserStats
+            stats={userStats}
+            onStatusChange={s => setFilters(prev => ({ ...prev, status: s }))}
+            onDifficultyChange={d => setFilters(prev => ({ ...prev, difficulty: d }))}
           />
-          {viewMode === 'list' ? <ProblemsTable problems={filteredProblems} /> : <ProblemsGrid problems={filteredProblems} />}
-        </main>
+
+          {/* Main */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <ProblemFilters
+              viewMode={viewMode} setViewMode={setViewMode}
+              noProblems={filteredProblems.length}
+              topics={topics} difficulties={difficulties} statuses={statuses}
+              searchTerm={filters.search}
+              selectedTopic={filters.tag}
+              selectedDifficulty={filters.difficulty}
+              selectedStatus={filters.status}
+              onSearchChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              onTopicChange={t => setFilters(prev => ({ ...prev, tag: t }))}
+              onDifficultyChange={d => setFilters(prev => ({ ...prev, difficulty: d }))}
+              onStatusChange={s => setFilters(prev => ({ ...prev, status: s }))}
+              onResetFilters={() => setFilters({ difficulty: 'All', tag: 'All', status: 'All', search: '' })}
+            />
+
+            {viewMode === 'list'
+              ? <ProblemsTable problems={filteredProblems} />
+              : <ProblemsGrid problems={filteredProblems} />
+            }
+          </div>
+        </div>
+
+        {/* Features section */}
+        <div style={{ marginTop: 64 }}>
+          <FeaturesSection />
+        </div>
       </div>
-
-        
-        
-
-     <FeaturesSection/>
-
-      
     </div>
   );
 }
