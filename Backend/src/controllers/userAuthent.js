@@ -6,6 +6,13 @@ const jwt = require('jsonwebtoken');
 const Submission = require("../models/submission")
 
 
+const cookieOptions = {
+    maxAge: 60 * 60 * 1000,
+    httpOnly: true,
+    secure: true, // Required for cross-site cookies on Render
+    sameSite: 'none' // Required for cross-site cookies
+};
+
 const register = async (req,res)=>{
     
     try{
@@ -37,7 +44,7 @@ const register = async (req,res)=>{
         role:user.role,
     }
     
-     res.cookie('token',token,{maxAge: 60*60*1000});
+     res.cookie('token', token, cookieOptions);
      res.status(201).json({
         user:reply,
         message:"Registered and Logged in Successfully"
@@ -78,7 +85,7 @@ const login = async (req,res)=>{
 
         // IMPORTANT: Payload MUST include role for adminMiddleware to work
         const token =  jwt.sign({_id:user._id , emailId:emailId, role:user.role},process.env.JWT_KEY,{expiresIn: 60*60});
-        res.cookie('token',token,{maxAge: 60*60*1000});
+        res.cookie('token', token, cookieOptions);
         res.status(201).json({
             user:reply,
             message:"Loggin Successfully"
@@ -104,7 +111,7 @@ const logout = async(req,res)=>{
             }
         }
 
-        res.cookie("token",null,{expires: new Date(Date.now())});
+        res.cookie("token", null, { ...cookieOptions, maxAge: 0 });
         res.send("Logged Out Succesfully");
     }
     catch(err){
@@ -135,7 +142,7 @@ const adminRegister = async(req,res)=>{
       });
 
      const token =  jwt.sign({_id:user._id , emailId:user.emailId, role:user.role},process.env.JWT_KEY,{expiresIn: 60*60});
-     res.cookie('token',token,{maxAge: 60*60*1000});
+     res.cookie('token', token, cookieOptions);
      res.status(201).json({
          message: "Admin Registered Successfully",
          user: {

@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+    baseURL: import.meta.env.VITE_API_URL || 'https://dsa-mentor-4.onrender.com',
     withCredentials: true, // MOST IMPORTANT - cookies automatically bhejega
     headers: {
         'Content-Type': 'application/json'

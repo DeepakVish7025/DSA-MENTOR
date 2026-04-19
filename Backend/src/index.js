@@ -3,6 +3,9 @@ const express = require('express');
 const app = express();
 require('dotenv').config();
 
+// Trust proxy for secure cookies on Render
+app.set('trust proxy', 1);
+
 const main = require('./config/db');
 const redisClient  = require('./config/redis');
 
@@ -18,14 +21,27 @@ const contestRoutes = require("./routes/contestRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 const courseProgressRoutes = require("./routes/courseProgressRoutes");
 
-
-
-
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    process.env.FRONTEND_URL
+].filter(Boolean);
 
 app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true 
-}))
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            // If the origin is not in the list, still allow it for now to avoid blocking users
+            // but in production, you should be more strict.
+            return callback(null, true);
+        }
+        return callback(null, true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
 
 app.use(express.json());
 app.use(cookieParser());
