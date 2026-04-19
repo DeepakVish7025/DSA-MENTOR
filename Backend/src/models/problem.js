@@ -80,6 +80,10 @@ const problemSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref:'user',
         required:true
+    },
+    videoUrl: {
+        type: String,
+        required: false
     }
 })
 

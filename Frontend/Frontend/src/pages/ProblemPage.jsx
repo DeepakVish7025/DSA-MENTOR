@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Trophy } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { 
+  Trophy, Code2, BookOpen, MessageSquare, History, 
+  Play, Send, ChevronLeft, Layout, Video, FileText 
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Editor from '@monaco-editor/react';
 import axiosClient from "../utils/axiosClient";
 import SubmissionHistory from "../components/SubmissionHistory";
@@ -29,476 +32,369 @@ const ProblemPage = () => {
   const [activeRightTab, setActiveRightTab] = useState('code');
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Mobile: which main panel is shown — 'problem' or 'editor'
-  const [mobilePanelTab, setMobilePanelTab] = useState('problem');
+  const [mobilePanelTab, setMobilePanelTab] = useState('problem'); // 'problem' or 'editor'
+
   const editorRef = useRef(null);
   const { problemId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const contestId = location.state?.contestId;
-  const { handleSubmit } = useForm();
 
   useEffect(() => {
     const fetchProblem = async () => {
       setLoading(true);
       try {
         const response = await axiosClient.get(`/problem/problemById/${problemId}`);
-        const initialCode = response.data.startCode.find(sc => sc.language === langMap[selectedLanguage])?.initialCode || '';
         setProblem(response.data);
-        setCode(initialCode);
+        
+        // Language normalization for initial code
+        const lang = normalizeLang(selectedLanguage);
+        const initialCodeObj = response.data.startCode.find(
+          sc => sc.language.toLowerCase() === lang
+        );
+        setCode(initialCodeObj?.initialCode || '// Start coding...');
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching problem:', error);
-        toast.error('Failed to load problem. Please try again.');
+        toast.error('Failed to load problem.');
         setLoading(false);
       }
     };
     fetchProblem();
   }, [problemId]);
 
-const normalizeLang = (lang) => {
-  if (lang === "js") return "javascript";
-  if (lang === "c++") return "cpp";
-  return lang.toLowerCase();
-};
+  const normalizeLang = (lang) => {
+    if (lang === "js") return "javascript";
+    if (lang === "cpp") return "cpp";
+    return lang.toLowerCase();
+  };
 
-useEffect(() => {
-  if (problem && problem.startCode) {
-    const lang = normalizeLang(selectedLanguage);
-
-    const codeObj = problem.startCode.find(
-      sc => sc.language.toLowerCase() === lang
-    );
-
-    setCode(codeObj?.initialCode || "// No start code");
-  }
-}, [selectedLanguage, problem]);
-
-  const handleEditorChange = (value) => setCode(value || '');
-  const handleEditorDidMount = (editor) => { editorRef.current = editor; };
-  const handleLanguageChange = (language) => setSelectedLanguage(language);
+  useEffect(() => {
+    if (problem?.startCode) {
+      const lang = normalizeLang(selectedLanguage);
+      const codeObj = problem.startCode.find(sc => sc.language.toLowerCase() === lang);
+      setCode(codeObj?.initialCode || "// No start code");
+    }
+  }, [selectedLanguage, problem]);
 
   const handleRun = async () => {
     setIsRunning(true);
     setRunResult(null);
-    toast.info('Running code...', { autoClose: 1500 });
     try {
       const response = await axiosClient.post(`/submission/run/${problemId}`, { code, language: selectedLanguage });
       setRunResult(response.data);
       setActiveRightTab('testcase');
-      if (response.data.success) toast.success('Code executed successfully!');
-      else toast.error('Some test cases failed.');
+      if (response.data.success) toast.success('Execution Successful');
     } catch (error) {
-      setRunResult({ success: false, error: 'Network error or server issue.' });
-      setActiveRightTab('testcase');
-      toast.error('Failed to run code.');
-    } finally {
-      setIsRunning(false);
-    }
+      toast.error('Execution Failed');
+    } finally { setIsRunning(false); }
   };
 
   const handleSubmitCode = async () => {
     setIsSubmitting(true);
-    setSubmitResult(null);
-    toast.info('Submitting solution...', { autoClose: 1500 });
     try {
       const response = await axiosClient.post(`/submission/submit/${problemId}`, { 
-        code, 
-        language: selectedLanguage,
-        contestId: contestId
+        code, language: selectedLanguage, contestId 
       });
       setSubmitResult(response.data);
       setActiveRightTab('result');
       if (response.data.accepted) {
-        toast.success('Solution Accepted! 🎉');
-        confetti({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#a855f7', '#3b82f6', '#22c55e']
-        });
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        toast.success('Accepted! 🎉');
       }
-      else toast.error('Submission failed. Try again!');
     } catch (error) {
-      setSubmitResult({ accepted: false, error: 'Submission failed or network issue.' });
-      setActiveRightTab('result');
-      toast.error('Failed to submit code.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getLanguageForMonaco = (lang) => {
-    switch (lang) {
-      case 'js': return 'javascript';
-      case 'java': return 'java';
-      case 'cpp': return 'cpp';
-      default: return 'javascript';
-    }
+      toast.error('Submission Error');
+    } finally { setIsSubmitting(false); }
   };
 
   const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'easy': return 'text-green-500 bg-green-500/10 border-green-500/30';
-      case 'medium': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30';
-      case 'hard': return 'text-red-500 bg-red-500/10 border-red-500/30';
-      default: return 'text-gray-400 bg-gray-500/10 border-gray-500/30';
+    switch (difficulty?.toLowerCase()) {
+      case 'easy': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+      case 'medium': return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
+      case 'hard': return 'text-rose-400 bg-rose-400/10 border-rose-400/20';
+      default: return 'text-slate-400 bg-slate-400/10';
     }
   };
 
-  /* ─── LEFT PANEL CONTENT ─── */
-  const LeftContent = () => (
-    <div className="flex flex-col h-full bg-gray-900">
-      {/* Left Tabs — scrollable on small screens */}
-      <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-700 bg-gray-800 shrink-0">
-        {[
-          { key: 'description', label: 'Description' },
-          { key: 'editorial', label: 'Editorial' },
-          { key: 'solutions', label: 'Solutions' },
-          { key: 'submissions', label: 'Submissions' },
-          { key: 'chatAI', label: 'AI Chat' },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveLeftTab(tab.key)}
-            className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
-              activeLeftTab === tab.key
-                ? 'text-blue-400 border-b-2 border-blue-400 bg-gray-900'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+  // --- SUB-COMPONENTS FOR CLEANER CODE ---
 
-      {/* Left Content */}
-      <div className="flex-1 overflow-y-auto">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader />
-          </div>
-        ) : (
-          problem && (
-            <div className="p-4 md:p-6">
-              {activeLeftTab === 'description' && (
-                <div className="space-y-6">
-                  <div>
-                    <h1 className="text-xl md:text-2xl font-bold text-white mb-3">{problem.title}</h1>
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getDifficultyColor(problem.difficulty)}`}>
-                        {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
-                      </span>
-                      {problem.tags && (
-                        <span className="px-3 py-1 rounded-full text-xs bg-gray-700 text-gray-300 border border-gray-600">
-                          {problem.tags}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-gray-300 leading-relaxed text-sm md:text-base">{problem.description}</div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-semibold text-white mb-3">Examples</h3>
-                    <div className="space-y-4">
-                      {problem.visibleTestCases.map((example, index) => (
-                        <div key={index} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                          <p className="text-sm font-semibold text-blue-400 mb-2">Example {index + 1}:</p>
-                          <div className="space-y-1 text-sm font-mono">
-                            <p className="text-gray-300"><span className="text-gray-500">Input:</span> {example.input}</p>
-                            <p className="text-gray-300"><span className="text-gray-500">Output:</span> {example.output}</p>
-                            {example.explanation && (
-                              <p className="text-gray-400 font-sans mt-2"><span className="text-gray-500">Explanation:</span> {example.explanation}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeLeftTab === 'editorial' && (
-                <div>
-                  <h2 className="text-xl font-bold text-white mb-4">Editorial</h2>
-                  <Editorial problem={problem} />
-                </div>
-              )}
-
-              {activeLeftTab === 'solutions' && (
-                <div>
-                  <h2 className="text-xl font-bold text-white mb-4">Solutions</h2>
-                  {problem.referenceSolution?.length > 0
-                    ? problem.referenceSolution.map((solution, index) => (
-                        <div key={index} className="mb-6 bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                          <div className="px-4 py-2 bg-gray-750 border-b border-gray-700 text-sm font-medium text-gray-300">
-                            {problem?.title} — {solution?.language}
-                          </div>
-                          <pre className="overflow-x-auto p-4 text-sm text-gray-200 leading-relaxed">
-                            <code>{solution?.completeCode}</code>
-                          </pre>
-                        </div>
-                      ))
-                    : <p className="text-gray-400 text-sm">Solutions will be available after you solve the problem.</p>
-                  }
-                </div>
-              )}
-
-              {activeLeftTab === 'submissions' && (
-                <div>
-                  <h2 className="text-xl font-bold text-white mb-4">My Submissions</h2>
-                  <SubmissionHistory problemId={problemId} />
-                </div>
-              )}
-
-              {activeLeftTab === 'chatAI' && (
-                <div>
-                  <h2 className="text-xl font-bold text-white mb-4">AI Assistant</h2>
-                  <ChatAi problem={problem} />
-                </div>
-              )}
-            </div>
-          )
-        )}
-      </div>
-    </div>
-  );
-
-  /* ─── RIGHT PANEL CONTENT ─── */
-  const RightContent = () => (
-    <div className="flex flex-col h-full bg-gray-900">
-      {/* Editor Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-gray-800 border-b border-gray-700 shrink-0">
-        {/* Language Selector */}
-        <div className="flex bg-gray-700 rounded-lg p-0.5 gap-0.5">
-          {['js', 'java', 'cpp'].map((lang) => (
-            <button
-              key={lang}
-              onClick={() => handleLanguageChange(lang)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                selectedLanguage === lang
-                  ? 'bg-blue-600 text-white shadow'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              {langMap[lang]}
-            </button>
-          ))}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <button
-            onClick={handleRun}
-            disabled={isRunning || isSubmitting}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isRunning ? (
-              <>
-                <span className="inline-block w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                Running
-              </>
-            ) : 'Run'}
-          </button>
-          <button
-            onClick={handleSubmitCode}
-            disabled={isRunning || isSubmitting}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <>
-                <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Submitting
-              </>
-            ) : 'Submit'}
-          </button>
-        </div>
-      </div>
-
-      {/* Monaco Editor */}
-      <div className="flex-1 min-h-0">
-        <Editor
-          height="100%"
-          language={getLanguageForMonaco(selectedLanguage)}
-          value={code}
-          onChange={handleEditorChange}
-          onMount={handleEditorDidMount}
-          theme="vs-dark"
-          options={{
-            fontSize: 13,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            lineNumbers: 'on',
-            automaticLayout: true,
-            padding: { top: 12 },
-          }}
+  const TabButton = ({ id, label, icon: Icon, active, onClick }) => (
+    <button
+      onClick={() => onClick(id)}
+      className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold transition-all duration-300 relative ${
+        active ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
+      }`}
+    >
+      <Icon size={14} />
+      {label}
+      {active && (
+        <motion.div 
+          layoutId="activeTab" 
+          className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" 
         />
-      </div>
-
-      {/* Bottom Tabs */}
-      <div className="flex border-t border-gray-700 bg-gray-800 shrink-0">
-        {[
-          { key: 'testcase', label: 'Test Result' },
-          { key: 'result', label: 'Submission' },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveRightTab(tab.key)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors ${
-              activeRightTab === tab.key
-                ? 'text-blue-400 border-b-2 border-blue-400 bg-gray-900'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Bottom Content */}
-      <div className="h-40 md:h-48 overflow-y-auto bg-gray-950 shrink-0">
-        {activeRightTab === 'testcase' && (
-          <div className="p-3 text-sm">
-            {runResult ? (
-              runResult.success ? (
-                <div className="space-y-3">
-                  <div className="flex flex-wrap gap-3 text-green-400 font-semibold">
-                    <span>✓ All Test Cases Passed</span>
-                    <span className="text-gray-400 font-normal">Runtime: {runResult.runtime} ms</span>
-                    <span className="text-gray-400 font-normal">Memory: {runResult.memory} KB</span>
-                  </div>
-                  {runResult.testCases?.map((tc, i) => (
-                    <div key={i} className="bg-gray-800 rounded p-3 space-y-1 font-mono text-xs border border-gray-700">
-                      <p className="text-gray-400">Input: <span className="text-gray-200">{tc.stdin}</span></p>
-                      <p className="text-gray-400">Expected: <span className="text-gray-200">{tc.expected_output}</span></p>
-                      <p className="text-gray-400">Output: <span className="text-gray-200">{tc.stdout}</span></p>
-                      <p className="text-green-400">✓ Passed</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-red-400 font-semibold">✗ Test Failed</p>
-                  {runResult.error && <p className="text-red-300 text-xs bg-red-900/20 p-2 rounded">{runResult.error}</p>}
-                  {runResult.testCases?.map((tc, i) => (
-                    <div key={i} className="bg-gray-800 rounded p-3 space-y-1 font-mono text-xs border border-gray-700">
-                      <p className="text-gray-400">Input: <span className="text-gray-200">{tc.stdin}</span></p>
-                      <p className="text-gray-400">Expected: <span className="text-gray-200">{tc.expected_output}</span></p>
-                      <p className="text-gray-400">Output: <span className="text-gray-200">{tc.stdout}</span></p>
-                      <p className={tc.status_id === 3 ? 'text-green-400' : 'text-red-400'}>
-                        {tc.status_id === 3 ? '✓ Passed' : '✗ Failed'}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : (
-              <p className="text-gray-500 text-center mt-8">Click "Run" to test your code with example inputs</p>
-            )}
-          </div>
-        )}
-
-        {activeRightTab === 'result' && (
-          <div className="p-3 text-sm">
-            {submitResult ? (
-              submitResult.accepted ? (
-                <div className="space-y-2">
-                  <p className="text-green-400 font-bold text-base">✓ Accepted</p>
-                  <div className="flex flex-wrap gap-3 text-xs text-gray-400">
-                    <span>Test Cases: <span className="text-gray-200">{submitResult.passedTestCases}/{submitResult.totalTestCases}</span></span>
-                    <span>Runtime: <span className="text-gray-200">{submitResult.runtime} ms</span></span>
-                    <span>Memory: <span className="text-gray-200">{submitResult.memory} KB</span></span>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-red-400 font-bold text-base">✗ {submitResult.error || 'Wrong Answer'}</p>
-                  <p className="text-xs text-gray-400">Test Cases: <span className="text-gray-200">{submitResult.passedTestCases}/{submitResult.totalTestCases}</span></p>
-                  {submitResult.message && <p className="text-xs text-gray-400 bg-gray-800 p-2 rounded">{submitResult.message}</p>}
-                </div>
-              )
-            ) : (
-              <p className="text-gray-500 text-center mt-8">Submit your solution to see the results</p>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </button>
   );
 
   return (
-    <div className="h-screen flex flex-col bg-gray-900 overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#0f172a] text-slate-200 overflow-hidden font-sans">
       <ToastContainer position="top-center" theme="dark" />
 
       {/* Contest Banner */}
       {contestId && (
-        <div className="bg-purple-600/20 border-b border-purple-500/30 px-4 py-2 flex items-center justify-center gap-3 shrink-0">
-          <Trophy size={16} className="text-purple-400 animate-bounce" />
-          <span className="text-xs font-bold uppercase tracking-widest text-purple-300">
-            Contest Mode Active — Submissions will be scored
-          </span>
-          <button 
-            onClick={() => navigate(`/contest/${contestId}`)}
-            className="text-[10px] bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded-full font-black transition-all ml-4"
-          >
-            Back to Dashboard
+        <div className="bg-gradient-to-r from-violet-600/20 to-blue-600/20 border-b border-white/5 px-4 py-1.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy size={14} className="text-yellow-500 animate-pulse" />
+            <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase opacity-80">Contest Mode Active</span>
+          </div>
+          <button onClick={() => navigate(`/contest/${contestId}`)} className="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1 rounded-md transition-all">
+            Exit
           </button>
         </div>
       )}
 
-      {/* ── Mobile Top Tab Bar (visible only on small screens) ── */}
-      <div className="flex md:hidden border-b border-gray-700 bg-gray-800 shrink-0">
-        <button
+      {/* Mobile Panel Toggle */}
+      <div className="md:hidden flex border-b border-white/5 bg-[#1e293b]">
+        <button 
           onClick={() => setMobilePanelTab('problem')}
-          className={`flex-1 py-3 text-sm font-medium transition-colors ${
-            mobilePanelTab === 'problem'
-              ? 'text-blue-400 border-b-2 border-blue-400'
-              : 'text-gray-400'
-          }`}
+          className={`flex-1 py-3 flex justify-center items-center gap-2 text-xs font-bold ${mobilePanelTab === 'problem' ? 'text-blue-400 bg-blue-500/5' : 'text-slate-500'}`}
         >
-          Problem
+          <FileText size={16} /> PROBLEM
         </button>
-        <button
+        <button 
           onClick={() => setMobilePanelTab('editor')}
-          className={`flex-1 py-3 text-sm font-medium transition-colors ${
-            mobilePanelTab === 'editor'
-              ? 'text-blue-400 border-b-2 border-blue-400'
-              : 'text-gray-400'
-          }`}
+          className={`flex-1 py-3 flex justify-center items-center gap-2 text-xs font-bold ${mobilePanelTab === 'editor' ? 'text-blue-400 bg-blue-500/5' : 'text-slate-500'}`}
         >
-          Code Editor
+          <Code2 size={16} /> EDITOR
         </button>
       </div>
 
-      {/* ── Main Area ── */}
-      <div className="flex-1 min-h-0 flex">
+      <main className="flex-1 flex overflow-hidden">
+        {/* Left Panel: Description, Editorial, etc. */}
+        <div className={`flex-col ${mobilePanelTab === 'problem' ? 'flex w-full' : 'hidden'} md:flex md:w-1/2 border-r border-white/5 bg-[#0f172a]`}>
+          <div className="flex overflow-x-auto no-scrollbar border-b border-white/5 bg-[#1e293b]/50">
+            <TabButton id="description" label="Description" icon={BookOpen} active={activeLeftTab === 'description'} onClick={setActiveLeftTab} />
+            <TabButton id="editorial" label="Editorial" icon={Video} active={activeLeftTab === 'editorial'} onClick={setActiveLeftTab} />
+            <TabButton id="submissions" label="History" icon={History} active={activeLeftTab === 'submissions'} onClick={setActiveLeftTab} />
+            <TabButton id="chatAI" label="AI" icon={MessageSquare} active={activeLeftTab === 'chatAI'} onClick={setActiveLeftTab} />
+          </div>
 
-        {/* Desktop: side-by-side split | Mobile: full-width tabs */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
+            <AnimatePresence mode="wait">
+              {loading ? (
+                <div className="h-full flex items-center justify-center"><Loader /></div>
+              ) : (
+                <motion.div
+                  key={activeLeftTab}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {activeLeftTab === 'description' && (
+                    <div className="space-y-6">
+                      <h1 className="text-2xl font-bold text-white tracking-tight">{problem?.title}</h1>
+                      <div className="flex gap-2">
+                        <span className={`px-3 py-1 rounded-md text-[10px] font-bold border ${getDifficultyColor(problem?.difficulty)}`}>
+                          {problem?.difficulty?.toUpperCase()}
+                        </span>
+                        <span className="px-3 py-1 rounded-md text-[10px] font-bold bg-slate-800 text-slate-400 border border-white/5">
+                          {problem?.tags || 'General'}
+                        </span>
+                      </div>
+                      <div className="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+                        {problem?.description}
+                      </div>
+                      
+                      {/* Examples Section */}
+                      <div className="space-y-4 pt-4">
+                        <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                          <Layout size={16} className="text-blue-400" /> Examples
+                        </h3>
+                        {problem?.visibleTestCases?.map((ex, i) => (
+                          <div key={i} className="bg-[#1e293b] rounded-xl p-4 border border-white/5 shadow-inner">
+                            <div className="font-mono text-xs space-y-2">
+                              <p><span className="text-blue-400 font-bold">Input:</span> <span className="text-slate-300">{ex.input}</span></p>
+                              <p><span className="text-emerald-400 font-bold">Output:</span> <span className="text-slate-300">{ex.output}</span></p>
+                              {ex.explanation && <p className="text-slate-500 italic mt-2">// {ex.explanation}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-        {/* Left Panel */}
-        <div
-          className={`
-            ${mobilePanelTab === 'problem' ? 'flex' : 'hidden'}
-            md:flex flex-col
-            w-full md:w-1/2 md:border-r border-gray-700
-          `}
-        >
-          <LeftContent />
+                  {activeLeftTab === 'editorial' && (
+                    <div className="space-y-6">
+                      <h2 className="text-xl font-bold text-white">Editorial & Video Solution</h2>
+                      
+                      {/* Priority 1: Cloudinary Video (Uploaded via Backend) */}
+                      {problem?.secureUrl ? (
+                        <div className="bg-[#1e293b]/50 rounded-xl p-4 border border-white/5">
+                          <Editorial 
+                            secureUrl={problem.secureUrl} 
+                            thumbnailUrl={problem.thumbnailUrl} 
+                            duration={problem.duration} 
+                          />
+                        </div>
+                      ) : problem?.videoUrl ? (
+                        /* Priority 2: YouTube Video Link */
+                        <div className="aspect-video w-full rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-black">
+                          <iframe
+                            className="w-full h-full"
+                            src={problem.videoUrl.replace("watch?v=", "embed/")}
+                            title="Editorial Video"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          ></iframe>
+                        </div>
+                      ) : (
+                        /* No Video Available */
+                        <div className="p-8 border border-dashed border-white/10 rounded-xl text-center text-slate-500">
+                          <Video size={40} className="mx-auto mb-2 opacity-20" />
+                          <p className="text-sm">No video editorial available for this problem yet.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeLeftTab === 'submissions' && <SubmissionHistory problemId={problemId} />}
+                  {activeLeftTab === 'chatAI' && <ChatAi problem={problem} />}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
-        {/* Right Panel */}
-        <div
-          className={`
-            ${mobilePanelTab === 'editor' ? 'flex' : 'hidden'}
-            md:flex flex-col
-            w-full md:w-1/2
-          `}
-        >
-          <RightContent />
-        </div>
+        {/* Right Panel: Code Editor */}
+        <div className={`${mobilePanelTab === 'editor' ? 'flex w-full' : 'hidden'} md:flex md:w-1/2 flex-col bg-[#0b0f1a]`}>
+          {/* Editor Toolbar */}
+          <div className="flex items-center justify-between px-4 py-2 bg-[#1e293b]/80 backdrop-blur-md border-b border-white/5">
+            <select 
+              value={selectedLanguage} 
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              className="bg-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg border border-white/10 focus:outline-none focus:ring-2 ring-blue-500/50 transition-all cursor-pointer"
+            >
+              <option value="js">JavaScript</option>
+              <option value="java">Java</option>
+              <option value="cpp">C++</option>
+            </select>
 
-      </div>
+            <div className="flex gap-2">
+              <button 
+                onClick={handleRun} 
+                disabled={isRunning}
+                className="flex items-center gap-2 px-4 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-xs font-bold rounded-lg transition-all"
+              >
+                {isRunning ? <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Play size={14} />}
+                Run
+              </button>
+              <button 
+                onClick={handleSubmitCode} 
+                disabled={isSubmitting}
+                className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-bold rounded-lg shadow-lg shadow-blue-900/20 transition-all"
+              >
+                {isSubmitting ? <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={14} />}
+                Submit
+              </button>
+            </div>
+          </div>
+
+          {/* Monaco Editor Container */}
+          <div className="flex-1 relative group">
+            <Editor
+              height="100%"
+              theme="vs-dark"
+              language={selectedLanguage === 'js' ? 'javascript' : selectedLanguage}
+              value={code}
+              onChange={(v) => setCode(v)}
+              options={{
+                fontSize: 14,
+                fontFamily: 'Fira Code, monospace',
+                minimap: { enabled: false },
+                padding: { top: 20 },
+                smoothScrolling: true,
+                cursorSmoothCaretAnimation: true,
+                lineNumbersMinChars: 3,
+              }}
+            />
+          </div>
+
+          {/* Bottom Results Panel */}
+          <div className="h-1/3 border-t border-white/10 bg-[#0f172a] flex flex-col">
+            <div className="flex border-b border-white/5">
+              <button 
+                onClick={() => setActiveRightTab('testcase')}
+                className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${activeRightTab === 'testcase' ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-400/5' : 'text-slate-500'}`}
+              >
+                Test Results
+              </button>
+              <button 
+                onClick={() => setActiveRightTab('result')}
+                className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${activeRightTab === 'result' ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-400/5' : 'text-slate-500'}`}
+              >
+                Submission
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 font-mono text-xs">
+              <AnimatePresence mode="wait">
+                {activeRightTab === 'testcase' ? (
+                  <motion.div key="tc" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    {runResult ? (
+                      <div className="space-y-3">
+                        <div className={`p-3 rounded-lg border ${runResult.success ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
+                          {runResult.success ? '✓ All Test Cases Passed' : '✗ Execution Error'}
+                        </div>
+                        {runResult.testCases?.map((tc, i) => (
+                          <div key={i} className="bg-slate-900 border border-white/5 rounded-lg p-3">
+                            <p className="opacity-50 mb-1">Input: {tc.stdin}</p>
+                            <p className="text-blue-300">Expected: {tc.expected_output}</p>
+                            <p className={tc.status_id === 3 ? 'text-emerald-400' : 'text-rose-400'}>Actual: {tc.stdout}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-slate-600 italic">Run code to see results...</div>
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div key="sub" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    {submitResult ? (
+                      <div className="space-y-3">
+                        <div className={`text-lg font-bold ${submitResult.accepted ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {submitResult.accepted ? 'Accepted' : 'Wrong Answer'}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-slate-900 p-2 rounded border border-white/5">
+                            <p className="opacity-40 text-[10px]">Runtime</p>
+                            <p>{submitResult.runtime}ms</p>
+                          </div>
+                          <div className="bg-slate-900 p-2 rounded border border-white/5">
+                            <p className="opacity-40 text-[10px]">Memory</p>
+                            <p>{submitResult.memory}KB</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-slate-600 italic">No submissions yet...</div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Global CSS for scrollbars */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; }
+      `}} />
     </div>
   );
 };
