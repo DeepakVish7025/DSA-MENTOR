@@ -5,7 +5,8 @@ import axiosClient from '../utils/axiosClient';
 import { logoutUser } from '../authSlice';
 import {
   BarChart2, CheckCircle, Target, Signal, Dumbbell, BrainCircuit,
-  RefreshCcw, List, LayoutGrid, Search, ChevronRight, Zap, Trophy, Code2
+  RefreshCcw, List, LayoutGrid, Search, ChevronRight, Zap, Trophy, Code2,
+  SlidersHorizontal, X
 } from 'lucide-react';
 import FeaturesSection from './hero';
 
@@ -30,8 +31,10 @@ const GlobalStyles = () => (
       --muted: #64748b;
     }
 
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     .hp-root * { box-sizing: border-box; }
-    .hp-root { font-family: 'Space Grotesk', sans-serif; }
+    .hp-root { font-family: 'Space Grotesk', sans-serif; background: var(--bg); }
     .mono { font-family: 'JetBrains Mono', monospace; }
 
     /* Scanline texture */
@@ -67,18 +70,15 @@ const GlobalStyles = () => (
     .stat-block:hover { border-color: var(--border-hover); transform: translateY(-2px); }
     .stat-block:hover::before { opacity: 1; }
 
-    /* Big number pulse */
     @keyframes countUp {
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
     .count-animate { animation: countUp 0.6s ease forwards; }
 
-    /* Progress ring */
     .ring-track { fill: none; stroke: rgba(255,255,255,0.06); }
     .ring-fill { fill: none; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1); transform: rotate(-90deg); transform-origin: center; }
 
-    /* Difficulty pill */
     .pill-easy  { background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
     .pill-medium{ background: rgba(234,179,8,0.12);  color: #facc15; border: 1px solid rgba(234,179,8,0.25); }
     .pill-hard  { background: rgba(239,68,68,0.12);  color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
@@ -97,6 +97,16 @@ const GlobalStyles = () => (
     @keyframes rowIn {
       from { opacity: 0; transform: translateX(-10px); }
       to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Mobile problem row */
+    @media (max-width: 640px) {
+      .prob-row {
+        grid-template-columns: 28px 1fr auto;
+        gap: 10px;
+        padding: 12px 14px;
+      }
+      .prob-row .tags-col { display: none; }
     }
 
     /* Grid card */
@@ -154,13 +164,11 @@ const GlobalStyles = () => (
     }
     .reset-btn:hover { border-color: var(--border-hover); color: var(--text); }
 
-    /* Section heading accent */
     .section-label {
       font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
       color: var(--green); font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Glowing dot */
     .live-dot {
       width: 8px; height: 8px; border-radius: 50%; background: var(--green);
       box-shadow: 0 0 8px var(--green-glow);
@@ -171,29 +179,122 @@ const GlobalStyles = () => (
       50% { box-shadow: 0 0 14px var(--green-glow), 0 0 28px rgba(34,197,94,0.2); }
     }
 
-    /* Progress bar */
     .pbar-track { background: rgba(255,255,255,0.06); border-radius: 99px; height: 4px; overflow: hidden; }
     .pbar-fill { height: 100%; border-radius: 99px; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
 
-    /* Tag chip */
     .tag-chip {
       font-size: 11px; padding: 2px 8px; border-radius: 6px;
       background: rgba(255,255,255,0.05); border: 1px solid var(--border);
       color: var(--muted); white-space: nowrap;
     }
 
-    /* Solved icon glow */
     .solved-icon { filter: drop-shadow(0 0 4px rgba(34,197,94,0.6)); }
 
-    /* Empty state */
     .empty-state {
       text-align: center; padding: 64px 24px;
       border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;
     }
 
-    /* Staggered row animation delays */
+    /* ── Mobile Stats Bar (horizontal) ── */
+    .mobile-stats-bar {
+      display: none;
+    }
+    @media (max-width: 900px) {
+      .mobile-stats-bar { display: flex; }
+      .desktop-sidebar { display: none !important; }
+    }
+    @media (min-width: 901px) {
+      .mobile-stats-bar { display: none !important; }
+      .desktop-sidebar { display: block !important; }
+    }
+
+    /* ── Drawer overlay ── */
+    .drawer-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      z-index: 100; backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .drawer-panel {
+      position: fixed; right: 0; top: 0; bottom: 0; width: min(340px, 90vw);
+      background: #0d1117; border-left: 1px solid var(--border);
+      z-index: 101; overflow-y: auto; padding: 24px;
+      animation: slideIn 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+    /* ── Filter row responsive ── */
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 10px;
+      align-items: end;
+    }
+    @media (max-width: 700px) {
+      .filter-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .filter-search-wrap {
+        grid-column: 1 / -1;
+      }
+    }
+    @media (max-width: 480px) {
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+      .filter-search-wrap {
+        grid-column: auto;
+      }
+    }
+
+    /* ── Table header hide on mobile ── */
+    .table-header { display: grid; }
+    @media (max-width: 640px) {
+      .table-header { display: none; }
+    }
+
+    /* ── Main layout grid ── */
+    .hp-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .hp-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Compact mobile stats pills ── */
+    .stat-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 14px; flex: 1;
+      min-width: 0;
+    }
+
+    /* Staggered animations */
     ${Array.from({length:30},(_,i)=>`.prob-row:nth-child(${i+1}){animation-delay:${i*0.04}s}`).join('')}
     ${Array.from({length:30},(_,i)=>`.prob-card:nth-child(${i+1}){animation-delay:${i*0.06}s}`).join('')}
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(34,197,94,0.3); }
+
+    /* Mobile filter button */
+    .mobile-filter-btn {
+      padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-family: 'Space Grotesk', sans-serif;
+      transition: all 0.2s;
+    }
+    .mobile-filter-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    @media (min-width: 701px) { .mobile-filter-btn { display: none; } }
   `}</style>
 );
 
@@ -215,7 +316,63 @@ const RingProgress = ({ value, total, color, size = 80, stroke = 6 }) => {
 };
 
 // ===================================================================================
-//  USER STATS SIDEBAR
+//  MOBILE STATS BAR (horizontal strip shown on tablet/mobile)
+// ===================================================================================
+const MobileStatsBar = ({ stats, onStatsClick }) => {
+  const items = [
+    { label: 'Solved', val: stats.solved, color: '#22c55e', icon: <CheckCircle size={14}/> },
+    { label: 'Total', val: stats.total, color: 'var(--text)', icon: <Code2 size={14}/> },
+    { label: 'Easy', val: stats.solvedByDifficulty.Easy, color: '#22c55e', icon: <Signal size={14}/> },
+    { label: 'Medium', val: stats.solvedByDifficulty.Medium, color: '#eab308', icon: <Dumbbell size={14}/> },
+    { label: 'Hard', val: stats.solvedByDifficulty.Hard, color: '#ef4444', icon: <BrainCircuit size={14}/> },
+  ];
+
+  return (
+    <div className="mobile-stats-bar" style={{
+      gap: 10, flexWrap: 'wrap', marginBottom: 20,
+      background: 'rgba(255,255,255,0.02)',
+      border: '1px solid var(--border)',
+      borderRadius: 16, padding: 16,
+    }}>
+      {/* Ring + percentage */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', marginBottom: 12 }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <RingProgress value={stats.solved} total={stats.total} color="#22c55e" size={60} stroke={4} />
+          <div style={{ position: 'absolute', textAlign: 'center' }}>
+            <div className="mono" style={{ fontSize: 11, fontWeight: 700, color: '#22c55e', lineHeight: 1 }}>{stats.solved}</div>
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 13, color: 'var(--muted)' }}>Overall Progress</div>
+          <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
+            {stats.total > 0 ? Math.round((stats.solved/stats.total)*100) : 0}
+            <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 400 }}>%</span>
+          </div>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <div className="live-dot" />
+          <div style={{ fontSize: 11, color: 'var(--muted)' }}>Live</div>
+        </div>
+      </div>
+
+      {/* Stat pills */}
+      <div style={{ display: 'flex', gap: 8, width: '100%', flexWrap: 'wrap' }}>
+        {items.map(s => (
+          <div key={s.label} className="stat-pill" style={{ minWidth: 'calc(33% - 6px)' }}>
+            <span style={{ color: s.color, flexShrink: 0 }}>{s.icon}</span>
+            <div>
+              <div className="mono" style={{ fontSize: 15, fontWeight: 700, color: s.color }}>{s.val}</div>
+              <div style={{ fontSize: 10, color: 'var(--muted)' }}>{s.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ===================================================================================
+//  USER STATS SIDEBAR (desktop)
 // ===================================================================================
 const UserStats = ({ stats, onStatusChange, onDifficultyChange }) => {
   const diffs = [
@@ -225,9 +382,7 @@ const UserStats = ({ stats, onStatusChange, onDifficultyChange }) => {
   ];
 
   return (
-    <div style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-      {/* Total solved */}
+    <div className="desktop-sidebar" style={{ position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="stat-block" style={{ padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <span className="section-label">Progress</span>
@@ -250,7 +405,6 @@ const UserStats = ({ stats, onStatusChange, onDifficultyChange }) => {
           </div>
         </div>
 
-        {/* Status pills */}
         <div style={{ display: 'flex', gap: 8 }}>
           {[
             { label: 'Solved', val: stats.solved, icon: <CheckCircle size={13}/>, color: '#22c55e', status: 'Solved' },
@@ -273,7 +427,6 @@ const UserStats = ({ stats, onStatusChange, onDifficultyChange }) => {
         </div>
       </div>
 
-      {/* Difficulty breakdown */}
       <div className="stat-block" style={{ padding: 24 }}>
         <span className="section-label" style={{ display: 'block', marginBottom: 16 }}>Difficulty</span>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -300,7 +453,6 @@ const UserStats = ({ stats, onStatusChange, onDifficultyChange }) => {
         </div>
       </div>
 
-      {/* Quick tip */}
       <div style={{
         border: '1px solid rgba(34,197,94,0.2)', borderRadius: 14,
         padding: '14px 18px', background: 'rgba(34,197,94,0.04)',
@@ -323,39 +475,46 @@ const ProblemFilters = ({
   viewMode, setViewMode, noProblems, topics, difficulties, statuses,
   searchTerm, selectedTopic, selectedDifficulty, selectedStatus,
   onSearchChange, onTopicChange, onDifficultyChange, onStatusChange, onResetFilters
-}) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-    {/* Top row */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-      <span className="section-label" style={{ marginRight: 'auto' }}>
-        Problems <span className="mono" style={{ fontSize: 12, color: 'var(--muted)' }}>({noProblems})</span>
-      </span>
-      <button className="reset-btn" onClick={onResetFilters}><RefreshCcw size={13}/> Reset</button>
-      <div style={{ display: 'flex', gap: 4 }}>
-        <button className={`toggle-btn${viewMode==='list'?' active':''}`} onClick={() => setViewMode('list')} aria-label="List view"><List size={17}/></button>
-        <button className={`toggle-btn${viewMode==='grid'?' active':''}`} onClick={() => setViewMode('grid')} aria-label="Grid view"><LayoutGrid size={17}/></button>
-      </div>
-    </div>
+}) => {
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-    {/* Filter inputs */}
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 10, alignItems: 'end' }}>
-      {/* Search */}
-      <div style={{ position: 'relative' }}>
-        <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', pointerEvents: 'none' }} />
-        <input className="hp-input" style={{ paddingLeft: 34 }} placeholder="Search problems..." value={searchTerm} onChange={onSearchChange} />
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Top row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <span className="section-label" style={{ marginRight: 'auto' }}>
+          Problems <span className="mono" style={{ fontSize: 12, color: 'var(--muted)' }}>({noProblems})</span>
+        </span>
+        <button className="reset-btn" onClick={onResetFilters}><RefreshCcw size={13}/> Reset</button>
+        {/* Mobile filter toggle */}
+        <button className="mobile-filter-btn" onClick={() => setShowMobileFilters(v => !v)}>
+          <SlidersHorizontal size={14}/> Filters
+        </button>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button className={`toggle-btn${viewMode==='list'?' active':''}`} onClick={() => setViewMode('list')} aria-label="List view"><List size={17}/></button>
+          <button className={`toggle-btn${viewMode==='grid'?' active':''}`} onClick={() => setViewMode('grid')} aria-label="Grid view"><LayoutGrid size={17}/></button>
+        </div>
       </div>
-      <select className="hp-select" style={{ width: 130 }} value={selectedDifficulty} onChange={e => onDifficultyChange(e.target.value)}>
-        {difficulties.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-      <select className="hp-select" style={{ width: 120 }} value={selectedStatus} onChange={e => onStatusChange(e.target.value)}>
-        {statuses.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-      <select className="hp-select" style={{ width: 140 }} value={selectedTopic} onChange={e => onTopicChange(e.target.value)}>
-        {topics.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
+
+      {/* Filter inputs — desktop always shown, mobile toggle */}
+      <div className="filter-grid" style={{ display: showMobileFilters || window.innerWidth > 700 ? 'grid' : 'none' }}>
+        <div className="filter-search-wrap" style={{ position: 'relative' }}>
+          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', pointerEvents: 'none' }} />
+          <input className="hp-input" style={{ paddingLeft: 34 }} placeholder="Search problems..." value={searchTerm} onChange={onSearchChange} />
+        </div>
+        <select className="hp-select" value={selectedDifficulty} onChange={e => onDifficultyChange(e.target.value)}>
+          {difficulties.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <select className="hp-select" value={selectedStatus} onChange={e => onStatusChange(e.target.value)}>
+          {statuses.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <select className="hp-select" value={selectedTopic} onChange={e => onTopicChange(e.target.value)}>
+          {topics.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ===================================================================================
 //  STATUS ICON
@@ -379,9 +538,9 @@ const ProblemsTable = ({ problems }) => {
 
   return (
     <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border)' }}>
-      {/* Header */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: '36px 1fr auto auto',
+      {/* Header — hidden on mobile via CSS */}
+      <div className="table-header" style={{
+        gridTemplateColumns: '36px 1fr auto auto',
         gap: 16, padding: '10px 20px',
         background: 'rgba(255,255,255,0.02)',
         borderBottom: '1px solid var(--border)'
@@ -391,19 +550,18 @@ const ProblemsTable = ({ problems }) => {
         ))}
       </div>
 
-      {/* Rows */}
       {problems.map((p, idx) => (
         <NavLink key={p._id} to={`/problem/${p._id}`} style={{ textDecoration: 'none' }}>
           <div className="prob-row" style={{ animationDelay: `${idx * 0.04}s` }}>
             <StatusIcon status={p.status} />
-            <span style={{ color: 'var(--text)', fontWeight: 500, fontSize: 14, transition: 'color 0.2s' }}
+            <span style={{ color: 'var(--text)', fontWeight: 500, fontSize: 14, transition: 'color 0.2s', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
               onMouseEnter={e => e.currentTarget.style.color='#22c55e'}
               onMouseLeave={e => e.currentTarget.style.color='var(--text)'}
             >{p.title}</span>
             <span className={`pill-${p.difficulty.toLowerCase()}`} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 99, whiteSpace: 'nowrap' }}>
               {p.difficulty}
             </span>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 220 }}>
+            <div className="tags-col" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 220 }}>
               {p.tags.slice(0,2).map(t => <span key={t} className="tag-chip">{t}</span>)}
               {p.tags.length > 2 && <span className="tag-chip">+{p.tags.length-2}</span>}
             </div>
@@ -427,7 +585,7 @@ const ProblemsGrid = ({ problems }) => {
   );
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
       {problems.map((p, idx) => {
         const diffColor = { Easy: '#22c55e', Medium: '#eab308', Hard: '#ef4444' }[p.difficulty] || 'var(--muted)';
         return (
@@ -528,12 +686,15 @@ function Homepage() {
       <div className="orb orb-1" />
       <div className="orb orb-2" />
 
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1280, margin: '0 auto', padding: '32px 24px' }}>
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1280, margin: '0 auto', padding: '24px 16px' }}>
 
-        {/* ── Layout ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 28, alignItems: 'start' }}>
+        {/* ── Mobile Stats Bar (visible below 900px) ── */}
+        <MobileStatsBar stats={userStats} />
 
-          {/* Sidebar */}
+        {/* ── Main Layout ── */}
+        <div className="hp-layout">
+
+          {/* Sidebar — desktop only, hidden via CSS on mobile */}
           <UserStats
             stats={userStats}
             onStatusChange={s => setFilters(prev => ({ ...prev, status: s }))}
@@ -541,7 +702,7 @@ function Homepage() {
           />
 
           {/* Main */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
             <ProblemFilters
               viewMode={viewMode} setViewMode={setViewMode}
               noProblems={filteredProblems.length}
