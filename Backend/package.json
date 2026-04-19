@@ -16,8 +16,8 @@
   "license": "ISC",
   "type": "commonjs",
   "engines": {
-    "node": ">=18"
-  },
+  "node": "18.x"
+},
   "dependencies": {
     "@google/genai": "^1.16.0",
     "@google/generative-ai": "^0.24.1",
