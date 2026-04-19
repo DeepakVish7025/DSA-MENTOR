@@ -1,402 +1,247 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { 
-  Trophy, Code2, BookOpen, MessageSquare, History, 
-  Play, Send, ChevronLeft, Layout, Video, FileText 
+  Menu, X, ChevronRight, Book, Code, Trophy, 
+  GraduationCap, MessageSquare, Users, Shield, 
+  FileText, Award, Target, Sparkles, Layout
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Editor from '@monaco-editor/react';
-import axiosClient from "../utils/axiosClient";
-import SubmissionHistory from "../components/SubmissionHistory";
-import ChatAi from '../components/ChatAi';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import Editorial from '../components/Editorial';
-import Loader from '../components/Loader';
-import confetti from 'canvas-confetti';
 
-const langMap = {
-  cpp: 'C++',
-  java: 'Java',
-  js: 'JavaScript'
-};
+const sections = [
+  { id: 'introduction', title: 'Introduction', icon: Book, color: 'from-orange-500 to-amber-500' },
+  { id: 'objectives', title: 'Key Objectives', icon: Target, color: 'from-blue-500 to-cyan-500' },
+  { id: 'user-roles', title: 'User Roles', icon: Users, color: 'from-purple-500 to-pink-500' },
+  { id: 'authentication', title: 'Authentication', icon: Shield, color: 'from-emerald-500 to-teal-500' },
+  { id: 'problems', title: 'Problem Solving', icon: Code, color: 'from-orange-500 to-red-500' },
+  { id: 'editor', title: 'Code Editor', icon: FileText, color: 'from-indigo-500 to-blue-500' },
+  { id: 'ai-interview', title: 'AI Interview', icon: MessageSquare, color: 'from-rose-500 to-orange-500' },
+  { id: 'courses', title: 'Course Section', icon: GraduationCap, color: 'from-sky-500 to-indigo-500' },
+  { id: 'certificates', title: 'Certificates', icon: Award, color: 'from-yellow-500 to-orange-500' },
+  { id: 'contests', title: 'Contest Module', icon: Trophy, color: 'from-amber-500 to-yellow-600' },
+  { id: 'leaderboard', title: 'Leaderboard', icon: Users, color: 'from-violet-500 to-fuchsia-500' },
+  { id: 'admin', title: 'Admin Panel', icon: Shield, color: 'from-slate-500 to-slate-700' },
+  { id: 'tech-stack', title: 'Tech Stack', icon: Code, color: 'from-cyan-500 to-blue-500' },
+];
 
-const ProblemPage = () => {
-  const [problem, setProblem] = useState(null);
-  const [selectedLanguage, setSelectedLanguage] = useState('js');
-  const [code, setCode] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [runResult, setRunResult] = useState(null);
-  const [submitResult, setSubmitResult] = useState(null);
-  const [activeLeftTab, setActiveLeftTab] = useState('description');
-  const [activeRightTab, setActiveRightTab] = useState('code');
-  const [isRunning, setIsRunning] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mobilePanelTab, setMobilePanelTab] = useState('problem'); // 'problem' or 'editor'
+export default function DocumentationPage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('introduction');
 
-  const editorRef = useRef(null);
-  const { problemId } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const contestId = location.state?.contestId;
-
-  useEffect(() => {
-    const fetchProblem = async () => {
-      setLoading(true);
-      try {
-        const response = await axiosClient.get(`/problem/problemById/${problemId}`);
-        setProblem(response.data);
-        
-        // Language normalization for initial code
-        const lang = normalizeLang(selectedLanguage);
-        const initialCodeObj = response.data.startCode.find(
-          sc => sc.language.toLowerCase() === lang
-        );
-        setCode(initialCodeObj?.initialCode || '// Start coding...');
-        setLoading(false);
-      } catch (error) {
-        toast.error('Failed to load problem.');
-        setLoading(false);
-      }
-    };
-    fetchProblem();
-  }, [problemId]);
-
-  const normalizeLang = (lang) => {
-    if (lang === "js") return "javascript";
-    if (lang === "cpp") return "cpp";
-    return lang.toLowerCase();
+  // Close sidebar on mobile when section changes
+  const handleSectionChange = (id) => {
+    setActiveSection(id);
+    setSidebarOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    if (problem?.startCode) {
-      const lang = normalizeLang(selectedLanguage);
-      const codeObj = problem.startCode.find(sc => sc.language.toLowerCase() === lang);
-      setCode(codeObj?.initialCode || "// No start code");
-    }
-  }, [selectedLanguage, problem]);
-
-  const handleRun = async () => {
-    setIsRunning(true);
-    setRunResult(null);
-    try {
-      const response = await axiosClient.post(`/submission/run/${problemId}`, { code, language: selectedLanguage });
-      setRunResult(response.data);
-      setActiveRightTab('testcase');
-      if (response.data.success) toast.success('Execution Successful');
-    } catch (error) {
-      toast.error('Execution Failed');
-    } finally { setIsRunning(false); }
-  };
-
-  const handleSubmitCode = async () => {
-    setIsSubmitting(true);
-    try {
-      const response = await axiosClient.post(`/submission/submit/${problemId}`, { 
-        code, language: selectedLanguage, contestId 
-      });
-      setSubmitResult(response.data);
-      setActiveRightTab('result');
-      if (response.data.accepted) {
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        toast.success('Accepted! 🎉');
-      }
-    } catch (error) {
-      toast.error('Submission Error');
-    } finally { setIsSubmitting(false); }
-  };
-
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty?.toLowerCase()) {
-      case 'easy': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
-      case 'medium': return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
-      case 'hard': return 'text-rose-400 bg-rose-400/10 border-rose-400/20';
-      default: return 'text-slate-400 bg-slate-400/10';
-    }
-  };
-
-  // --- SUB-COMPONENTS FOR CLEANER CODE ---
-
-  const TabButton = ({ id, label, icon: Icon, active, onClick }) => (
-    <button
-      onClick={() => onClick(id)}
-      className={`flex items-center gap-2 px-4 py-3 text-xs font-semibold transition-all duration-300 relative ${
-        active ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
-      }`}
-    >
-      <Icon size={14} />
-      {label}
-      {active && (
-        <motion.div 
-          layoutId="activeTab" 
-          className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" 
-        />
-      )}
-    </button>
-  );
+  const currentSectionData = sections.find(s => s.id === activeSection);
 
   return (
-    <div className="h-screen flex flex-col bg-[#0f172a] text-slate-200 overflow-hidden font-sans">
-      <ToastContainer position="top-center" theme="dark" />
+    <div className="min-h-screen bg-[#0f172a] text-slate-200 selection:bg-orange-500/30">
+      {/* Background Decor */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[10%] -right-[10%] w-[40%] h-[40%] bg-orange-500/5 blur-[120px] rounded-full" />
+        <div className="absolute -bottom-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full" />
+      </div>
 
-      {/* Contest Banner */}
-      {contestId && (
-        <div className="bg-gradient-to-r from-violet-600/20 to-blue-600/20 border-b border-white/5 px-4 py-1.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Trophy size={14} className="text-yellow-500 animate-pulse" />
-            <span className="text-[10px] md:text-xs font-bold tracking-widest uppercase opacity-80">Contest Mode Active</span>
+      {/* Mobile Top Bar */}
+      <div className="lg:hidden sticky top-0 z-50 bg-[#1e293b]/80 backdrop-blur-md border-b border-white/5 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="bg-orange-500 p-1.5 rounded-lg shadow-lg shadow-orange-500/20">
+            <Code size={18} className="text-white" />
           </div>
-          <button onClick={() => navigate(`/contest/${contestId}`)} className="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1 rounded-md transition-all">
-            Exit
-          </button>
+          <span className="font-black tracking-tighter text-white">CODEMASTER <span className="text-orange-500">DOCS</span></span>
         </div>
-      )}
-
-      {/* Mobile Panel Toggle */}
-      <div className="md:hidden flex border-b border-white/5 bg-[#1e293b]">
         <button 
-          onClick={() => setMobilePanelTab('problem')}
-          className={`flex-1 py-3 flex justify-center items-center gap-2 text-xs font-bold ${mobilePanelTab === 'problem' ? 'text-blue-400 bg-blue-500/5' : 'text-slate-500'}`}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 bg-slate-800 rounded-full text-orange-500"
         >
-          <FileText size={16} /> PROBLEM
-        </button>
-        <button 
-          onClick={() => setMobilePanelTab('editor')}
-          className={`flex-1 py-3 flex justify-center items-center gap-2 text-xs font-bold ${mobilePanelTab === 'editor' ? 'text-blue-400 bg-blue-500/5' : 'text-slate-500'}`}
-        >
-          <Code2 size={16} /> EDITOR
+          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
-      <main className="flex-1 flex overflow-hidden">
-        {/* Left Panel: Description, Editorial, etc. */}
-        <div className={`flex-col ${mobilePanelTab === 'problem' ? 'flex w-full' : 'hidden'} md:flex md:w-1/2 border-r border-white/5 bg-[#0f172a]`}>
-          <div className="flex overflow-x-auto no-scrollbar border-b border-white/5 bg-[#1e293b]/50">
-            <TabButton id="description" label="Description" icon={BookOpen} active={activeLeftTab === 'description'} onClick={setActiveLeftTab} />
-            <TabButton id="editorial" label="Editorial" icon={Video} active={activeLeftTab === 'editorial'} onClick={setActiveLeftTab} />
-            <TabButton id="submissions" label="History" icon={History} active={activeLeftTab === 'submissions'} onClick={setActiveLeftTab} />
-            <TabButton id="chatAI" label="AI" icon={MessageSquare} active={activeLeftTab === 'chatAI'} onClick={setActiveLeftTab} />
-          </div>
-
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
-            <AnimatePresence mode="wait">
-              {loading ? (
-                <div className="h-full flex items-center justify-center"><Loader /></div>
-              ) : (
-                <motion.div
-                  key={activeLeftTab}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {activeLeftTab === 'description' && (
-                    <div className="space-y-6">
-                      <h1 className="text-2xl font-bold text-white tracking-tight">{problem?.title}</h1>
-                      <div className="flex gap-2">
-                        <span className={`px-3 py-1 rounded-md text-[10px] font-bold border ${getDifficultyColor(problem?.difficulty)}`}>
-                          {problem?.difficulty?.toUpperCase()}
-                        </span>
-                        <span className="px-3 py-1 rounded-md text-[10px] font-bold bg-slate-800 text-slate-400 border border-white/5">
-                          {problem?.tags || 'General'}
-                        </span>
-                      </div>
-                      <div className="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-                        {problem?.description}
-                      </div>
-                      
-                      {/* Examples Section */}
-                      <div className="space-y-4 pt-4">
-                        <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                          <Layout size={16} className="text-blue-400" /> Examples
-                        </h3>
-                        {problem?.visibleTestCases?.map((ex, i) => (
-                          <div key={i} className="bg-[#1e293b] rounded-xl p-4 border border-white/5 shadow-inner">
-                            <div className="font-mono text-xs space-y-2">
-                              <p><span className="text-blue-400 font-bold">Input:</span> <span className="text-slate-300">{ex.input}</span></p>
-                              <p><span className="text-emerald-400 font-bold">Output:</span> <span className="text-slate-300">{ex.output}</span></p>
-                              {ex.explanation && <p className="text-slate-500 italic mt-2">// {ex.explanation}</p>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {activeLeftTab === 'editorial' && (
-                    <div className="space-y-6">
-                      <h2 className="text-xl font-bold text-white">Editorial & Video Solution</h2>
-                      
-                      {/* Priority 1: Cloudinary Video (Uploaded via Backend) */}
-                      {problem?.secureUrl ? (
-                        <div className="bg-[#1e293b]/50 rounded-xl p-4 border border-white/5">
-                          <Editorial 
-                            secureUrl={problem.secureUrl} 
-                            thumbnailUrl={problem.thumbnailUrl} 
-                            duration={problem.duration} 
-                          />
-                        </div>
-                      ) : problem?.videoUrl ? (
-                        /* Priority 2: YouTube Video Link */
-                        <div className="aspect-video w-full rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-black">
-                          <iframe
-                            className="w-full h-full"
-                            src={problem.videoUrl.replace("watch?v=", "embed/")}
-                            title="Editorial Video"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          ></iframe>
-                        </div>
-                      ) : (
-                        /* No Video Available */
-                        <div className="p-8 border border-dashed border-white/10 rounded-xl text-center text-slate-500">
-                          <Video size={40} className="mx-auto mb-2 opacity-20" />
-                          <p className="text-sm">No video editorial available for this problem yet.</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {activeLeftTab === 'submissions' && <SubmissionHistory problemId={problemId} />}
-                  {activeLeftTab === 'chatAI' && <ChatAi problem={problem} />}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Right Panel: Code Editor */}
-        <div className={`${mobilePanelTab === 'editor' ? 'flex w-full' : 'hidden'} md:flex md:w-1/2 flex-col bg-[#0b0f1a]`}>
-          {/* Editor Toolbar */}
-          <div className="flex items-center justify-between px-4 py-2 bg-[#1e293b]/80 backdrop-blur-md border-b border-white/5">
-            <select 
-              value={selectedLanguage} 
-              onChange={(e) => setSelectedLanguage(e.target.value)}
-              className="bg-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg border border-white/10 focus:outline-none focus:ring-2 ring-blue-500/50 transition-all cursor-pointer"
-            >
-              <option value="js">JavaScript</option>
-              <option value="java">Java</option>
-              <option value="cpp">C++</option>
-            </select>
-
-            <div className="flex gap-2">
-              <button 
-                onClick={handleRun} 
-                disabled={isRunning}
-                className="flex items-center gap-2 px-4 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-xs font-bold rounded-lg transition-all"
-              >
-                {isRunning ? <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Play size={14} />}
-                Run
-              </button>
-              <button 
-                onClick={handleSubmitCode} 
-                disabled={isSubmitting}
-                className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-bold rounded-lg shadow-lg shadow-blue-900/20 transition-all"
-              >
-                {isSubmitting ? <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={14} />}
-                Submit
-              </button>
-            </div>
-          </div>
-
-          {/* Monaco Editor Container */}
-          <div className="flex-1 relative group">
-            <Editor
-              height="100%"
-              theme="vs-dark"
-              language={selectedLanguage === 'js' ? 'javascript' : selectedLanguage}
-              value={code}
-              onChange={(v) => setCode(v)}
-              options={{
-                fontSize: 14,
-                fontFamily: 'Fira Code, monospace',
-                minimap: { enabled: false },
-                padding: { top: 20 },
-                smoothScrolling: true,
-                cursorSmoothCaretAnimation: true,
-                lineNumbersMinChars: 3,
-              }}
+      <div className="flex max-w-[1600px] mx-auto relative">
+        
+        {/* Sidebar Overlay for Mobile */}
+        <AnimatePresence>
+          {sidebarOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
             />
-          </div>
+          )}
+        </AnimatePresence>
 
-          {/* Bottom Results Panel */}
-          <div className="h-1/3 border-t border-white/10 bg-[#0f172a] flex flex-col">
-            <div className="flex border-b border-white/5">
-              <button 
-                onClick={() => setActiveRightTab('testcase')}
-                className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${activeRightTab === 'testcase' ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-400/5' : 'text-slate-500'}`}
-              >
-                Test Results
-              </button>
-              <button 
-                onClick={() => setActiveRightTab('result')}
-                className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${activeRightTab === 'result' ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-400/5' : 'text-slate-500'}`}
-              >
-                Submission
-              </button>
+        {/* Sidebar */}
+        <aside
+          className={`
+            fixed lg:sticky top-0 lg:top-0 h-screen z-50
+            w-72 bg-[#0f172a]/80 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none
+            border-r border-white/5 transition-transform duration-300
+            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          `}
+        >
+          <div className="p-6 h-full flex flex-col">
+            <div className="hidden lg:flex items-center gap-3 mb-10">
+              <div className="bg-orange-500 p-2 rounded-xl shadow-xl shadow-orange-500/20">
+                <Sparkles size={20} className="text-white" />
+              </div>
+              <h1 className="text-xl font-black tracking-tighter text-white">CODEMASTER</h1>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 font-mono text-xs">
-              <AnimatePresence mode="wait">
-                {activeRightTab === 'testcase' ? (
-                  <motion.div key="tc" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    {runResult ? (
-                      <div className="space-y-3">
-                        <div className={`p-3 rounded-lg border ${runResult.success ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
-                          {runResult.success ? '✓ All Test Cases Passed' : '✗ Execution Error'}
-                        </div>
-                        {runResult.testCases?.map((tc, i) => (
-                          <div key={i} className="bg-slate-900 border border-white/5 rounded-lg p-3">
-                            <p className="opacity-50 mb-1">Input: {tc.stdin}</p>
-                            <p className="text-blue-300">Expected: {tc.expected_output}</p>
-                            <p className={tc.status_id === 3 ? 'text-emerald-400' : 'text-rose-400'}>Actual: {tc.stdout}</p>
+            <nav className="flex-1 overflow-y-auto space-y-1 custom-scrollbar pr-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 px-4">Navigation</p>
+              {sections.map((section) => {
+                const Icon = section.icon;
+                const isActive = activeSection === section.id;
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => handleSectionChange(section.id)}
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group
+                      ${isActive 
+                        ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20 scale-[1.02]' 
+                        : 'hover:bg-white/5 text-slate-400 hover:text-slate-200'}
+                    `}
+                  >
+                    <Icon size={18} className={isActive ? 'text-white' : 'group-hover:text-orange-500'} />
+                    <span className="text-sm font-semibold">{section.title}</span>
+                    {isActive && (
+                      <motion.div layoutId="activeInd" className="ml-auto w-1.5 h-1.5 bg-white rounded-full" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+            
+            <div className="mt-6 p-4 bg-slate-800/50 rounded-2xl border border-white/5">
+              <p className="text-[10px] text-slate-500 font-bold uppercase">Version</p>
+              <p className="text-xs text-orange-500 font-mono">v2.4.0-stable</p>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 min-h-screen px-4 py-8 lg:p-12 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeSection}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="max-w-4xl mx-auto"
+            >
+              {/* Header Section */}
+              <div className="mb-12">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`p-3 rounded-2xl bg-gradient-to-br ${currentSectionData.color} shadow-lg`}>
+                    <currentSectionData.icon className="text-white" size={28} />
+                  </div>
+                  <span className="text-sm font-bold text-orange-500 uppercase tracking-widest">Core Module</span>
+                </div>
+                <h1 className="text-4xl md:text-5xl font-black text-white mb-6 tracking-tight">
+                  {currentSectionData.title}
+                </h1>
+                <div className="h-1.5 w-24 bg-gradient-to-r from-orange-500 to-transparent rounded-full" />
+              </div>
+
+              {/* Dynamic Content Rendering */}
+              <div className="space-y-8">
+                
+                {activeSection === 'introduction' && (
+                  <div className="space-y-6">
+                    <p className="text-xl text-slate-400 leading-relaxed font-medium">
+                      CodeMaster is an elite-tier learning ecosystem architected to bridge the gap between academic theory and <span className="text-white font-bold underline decoration-orange-500">Technical Mastery.</span>
+                    </p>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {[
+                        { title: 'Learn', desc: 'Deep-dive into DSA and SQL fundamentals.', icon: Book },
+                        { title: 'Practice', desc: 'Solve real-world company interview problems.', icon: Code },
+                        { title: 'Compete', desc: 'Join global contests and rank higher.', icon: Trophy },
+                        { title: 'Succeed', desc: 'Get certified and ace your interviews.', icon: Award },
+                      ].map((card, i) => (
+                        <motion.div 
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.1 }}
+                          key={i} className="bg-slate-800/40 border border-white/5 p-6 rounded-3xl hover:border-orange-500/30 transition-all group"
+                        >
+                          <card.icon className="text-orange-500 mb-4 group-hover:scale-110 transition-transform" size={24} />
+                          <h3 className="text-white font-bold mb-1">{card.title}</h3>
+                          <p className="text-sm text-slate-500">{card.desc}</p>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === 'tech-stack' && (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[
+                      { l: 'Frontend', v: 'React.js / Tailwind', c: 'text-blue-400' },
+                      { l: 'Backend', v: 'Node.js / Express', c: 'text-emerald-400' },
+                      { l: 'Database', v: 'MongoDB Atlas', c: 'text-green-500' },
+                      { l: 'Security', v: 'JWT / Bcrypt', c: 'text-rose-400' },
+                      { l: 'AI Engine', v: 'Gemini / OpenAI', c: 'text-purple-400' },
+                      { l: 'State', v: 'Redux Toolkit', c: 'text-indigo-400' },
+                    ].map((tech, i) => (
+                      <div key={i} className="bg-white/5 border border-white/5 p-5 rounded-2xl flex flex-col items-center text-center">
+                        <span className="text-[10px] font-black uppercase text-slate-500 mb-2">{tech.l}</span>
+                        <span className={`text-lg font-bold ${tech.c}`}>{tech.v}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Standard Card for generic sections */}
+                {activeSection !== 'introduction' && activeSection !== 'tech-stack' && (
+                  <div className="bg-slate-800/30 border border-white/5 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-10 opacity-[0.03]">
+                      <currentSectionData.icon size={200} />
+                    </div>
+                    <div className="relative z-10 space-y-6">
+                      <p className="text-lg text-slate-300">Detailed overview of the <span className="text-orange-500 font-bold">{currentSectionData.title}</span> system and its functional components.</p>
+                      
+                      {/* Placeholder for specific section items - You can map your section details here */}
+                      <div className="grid gap-4">
+                        {[1, 2, 3].map((item) => (
+                          <div key={item} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <div className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center shrink-0 font-bold text-xs">{item}</div>
+                            <p className="text-sm text-slate-400 italic">Component documentation for this sub-module will be detailed in the upcoming platform audit.</p>
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-slate-600 italic">Run code to see results...</div>
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.div key="sub" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    {submitResult ? (
-                      <div className="space-y-3">
-                        <div className={`text-lg font-bold ${submitResult.accepted ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {submitResult.accepted ? 'Accepted' : 'Wrong Answer'}
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="bg-slate-900 p-2 rounded border border-white/5">
-                            <p className="opacity-40 text-[10px]">Runtime</p>
-                            <p>{submitResult.runtime}ms</p>
-                          </div>
-                          <div className="bg-slate-900 p-2 rounded border border-white/5">
-                            <p className="opacity-40 text-[10px]">Memory</p>
-                            <p>{submitResult.memory}KB</p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-slate-600 italic">No submissions yet...</div>
-                    )}
-                  </motion.div>
+                    </div>
+                  </div>
                 )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-      </main>
 
-      {/* Global CSS for scrollbars */}
+              </div>
+
+              {/* Footer CTA */}
+              <div className="mt-20 p-8 rounded-3xl bg-gradient-to-r from-orange-600 to-orange-400 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-orange-500/20">
+                <div>
+                  <h3 className="text-2xl font-black text-white">Ready to Master Code?</h3>
+                  <p className="text-orange-100 font-medium">Start your journey today on CodeMaster.</p>
+                </div>
+                <button className="bg-white text-orange-600 px-8 py-3 rounded-xl font-black hover:scale-105 transition-transform shadow-lg">
+                  GO TO DASHBOARD
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+
       <style dangerouslySetInnerHTML={{ __html: `
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #f97316; }
       `}} />
     </div>
   );
-};
-
-export default ProblemPage;
+}
