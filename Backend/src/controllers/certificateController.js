@@ -3,17 +3,28 @@ const Certificate = require('../models/certificate');
 // Issue a new certificate
 const issueCertificate = async (req, res) => {
     try {
-        const { certId, userName, courseName } = req.body;
+        const { courseName } = req.body;
         const userId = req.result._id;
         
-        console.log(`Issuing certificate: ${certId} for ${userName}`);
+        // Fetch user info from DB to ensure correct name
+        const User = require('../models/user');
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        const userName = `${user.firstName} ${user.lastName || ''}`.trim();
 
-        // Check if certificate already exists for this ID
-        const existingCert = await Certificate.findOne({ certId });
+        console.log(`Issuing certificate for user: ${userName}, course: ${courseName}`);
+
+        // Check if certificate already exists for this user and course
+        const existingCert = await Certificate.findOne({ user: userId, courseName });
         if (existingCert) {
-            console.log(`Certificate ${certId} already exists.`);
+            console.log(`Certificate already exists for user ${userId} and course ${courseName}.`);
             return res.status(200).json(existingCert);
         }
+
+        // Generate a unique certId if not already exists
+        const certId = 'DM-' + Math.floor(100000 + Math.random() * 900000);
 
         const newCert = await Certificate.create({
             certId,

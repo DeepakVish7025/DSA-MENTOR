@@ -8,14 +8,14 @@ const userMiddleware = async (req,res,next)=>{
         
         const {token} = req.cookies;
         if(!token)
-            throw new Error("Token is not persent");
+            throw new Error("Token is not present");
 
         const payload = jwt.verify(token,process.env.JWT_KEY);
 
         const {_id} = payload;
 
         if(!_id){
-            throw new Error("Invalid token");
+            throw new Error("Invalid token payload");
         }
 
         const result = await User.findById(_id);
@@ -28,19 +28,23 @@ const userMiddleware = async (req,res,next)=>{
         try {
             if (redisClient.isOpen) {
                 const IsBlocked = await redisClient.exists(`token:${token}`);
-                if (IsBlocked) throw new Error("Invalid Token");
+                if (IsBlocked) throw new Error("Token is blacklisted");
             }
         } catch (redisErr) {
             console.error("Redis Error in Middleware:", redisErr.message);
         }
 
         req.result = result;
-
+        req.user = result; 
 
         next();
     }
     catch(err){
-        res.status(401).send("Error: "+ err.message)
+        // Don't log if token is just missing (it's normal for unauthenticated users)
+        if (err.message !== "Token is not present") {
+            console.error("User Auth Error:", err.message);
+        }
+        res.status(401).json({ message: "Unauthorized", error: err.message });
     }
 
 }

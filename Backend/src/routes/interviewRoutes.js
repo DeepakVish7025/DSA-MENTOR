@@ -79,117 +79,117 @@ const interviewSessions = new Map();
 const questionPools = {
   "Frontend Developer": {
     easy: [
-      "What is the difference between let, const, and var in JavaScript?",
-      "Explain the CSS box model and its components.",
-      "What are semantic HTML elements and why are they important?",
-      "How do you make a website responsive?",
-      "What is the DOM and how do you manipulate it?"
+      "How would you explain the CSS Box Model to a junior developer, and why is 'box-sizing: border-box' commonly used in modern projects?",
+      "In a React project, when would you choose to use a Functional Component over a Class Component, and why is this the current industry standard?",
+      "You're tasked with improving the accessibility of a website. What are the first three things you would check or implement?",
+      "Explain how you would handle a basic form submission in React, including managing the input state and preventing the default browser behavior.",
+      "What is the difference between '==' and '===' in JavaScript, and in what specific scenarios might '==' lead to unexpected bugs?"
     ],
     medium: [
-      "Explain React hooks and give examples of useState and useEffect.",
-      "What is the virtual DOM and how does it improve performance?",
-      "How would you optimize a React application for better performance?",
-      "Explain the difference between server-side and client-side rendering.",
-      "What are CSS preprocessors and what are their benefits?"
+      "Scenario: Your React application is lagging when a user types into a search bar that filters a large list. How would you diagnose and fix this performance issue?",
+      "Explain the concept of 'lifting state up' in React. Can you describe a scenario where you've had to do this to solve a data-sharing problem between components?",
+      "How do React Hooks like useMemo and useCallback help in performance optimization? Give a practical example of when you would use each.",
+      "You need to fetch data from an API and display it in a list. How would you handle loading states, error states, and empty results to ensure a good user experience?",
+      "Explain the difference between Client-Side Rendering (CSR) and Server-Side Rendering (SSR). In what specific business scenario would you recommend SSR over CSR?"
     ],
     hard: [
-      "How would you implement a state management solution for a large React app?",
-      "Explain webpack and how you would configure it for a production build.",
-      "How would you implement lazy loading and code splitting in React?",
-      "Design a system for handling real-time updates in a frontend application.",
-      "Explain micro-frontends architecture and its trade-offs."
+      "Design a state management architecture for a complex E-commerce dashboard that needs to handle real-time notifications, a shopping cart, and user profile data simultaneously.",
+      "Scenario: Your team is moving towards a Micro-Frontend architecture. What are the biggest technical challenges you expect to face regarding shared state and CSS isolation?",
+      "How would you implement a robust 'Infinite Scroll' feature from scratch, considering performance, memory management, and network efficiency?",
+      "Explain the internal workings of the React Reconciliation process (Fiber). How does it handle updates differently than the older stack reconciler?",
+      "You've discovered a memory leak in a large-scale SPA. Walk me through your process of using Chrome DevTools to identify the source and how you would go about fixing it."
     ]
   },
   "Backend Developer": {
     easy: [
-      "What is REST API and what are HTTP methods?",
-      "Explain the difference between SQL and NoSQL databases.",
-      "What is middleware in Express.js?",
-      "How do you handle errors in Node.js applications?",
-      "What is the purpose of environment variables?"
+      "Scenario: A client is reporting that they are getting 404 errors on a route you just created. Walk me through your debugging steps in an Express.js environment.",
+      "What is the difference between authentication and authorization? How would you explain this distinction to a non-technical stakeholder?",
+      "Why is it important to use environment variables for sensitive data like API keys? How do you manage them in your local development vs. production?",
+      "Explain the basic concept of middleware in Node.js. Can you describe a common use case for a custom middleware you've written?",
+      "What are the advantages of using an ORM (like Sequelize or Mongoose) versus writing raw SQL queries, and when might you prefer the latter?"
     ],
     medium: [
-      "How would you implement authentication and authorization in an API?",
-      "Explain database indexing and when to use it.",
-      "What are the principles of microservices architecture?",
-      "How do you handle concurrency in backend applications?",
-      "Explain caching strategies and when to use them."
+      "How would you design a database schema for a blog application that supports users, posts, comments, and nested replies? Which database type (SQL vs NoSQL) would you choose and why?",
+      "Explain the concept of 'Race Conditions' in backend development. Describe a scenario where one might occur and how you would prevent it using database locks or other mechanisms.",
+      "Scenario: Your API is suddenly receiving 10x more traffic than usual and is slowing down. What are the first three scaling strategies you would implement?",
+      "How do you ensure your API is secure against common vulnerabilities like SQL Injection and Cross-Site Scripting (XSS)?",
+      "Explain the difference between horizontal and vertical scaling. In what situation would you reach the limit of vertical scaling for a database?"
     ],
     hard: [
-      "Design a system to handle millions of concurrent users.",
-      "How would you implement distributed transactions?",
-      "Explain event-driven architecture and its benefits.",
-      "How would you design a rate limiting system?",
-      "Explain database sharding strategies and trade-offs."
+      "Design a highly available system for processing millions of background tasks (like sending emails or processing images) while ensuring no tasks are lost even if a server crashes.",
+      "Scenario: You are implementing a distributed system. How would you handle data consistency across multiple services using the Saga pattern or Two-Phase Commit?",
+      "Explain how you would design and implement a robust Rate Limiting system for a public API that supports different tiers of users (Free vs Premium).",
+      "Walk me through the design of a real-time analytics dashboard that processes millions of events per second with sub-second latency.",
+      "How would you approach migrating a monolithic legacy backend to a microservices architecture without downtime?"
     ]
   },
   "Full Stack Developer": {
     easy: [
-      "Explain the difference between frontend and backend development.",
-      "What is CORS and why is it important?",
-      "How do you connect a frontend application to a backend API?",
-      "What is JSON and how is it used in web development?",
-      "Explain the MVC architecture pattern."
+      "Explain the full flow of a web request: from a user clicking a button on the frontend to the data being stored in a database and a response being sent back.",
+      "What is CORS, and why do developers often encounter issues with it during development? How do you resolve a CORS error properly?",
+      "Scenario: You need to add a 'Contact Us' form to a website. Describe the frontend and backend components you would need to build this feature from end-to-end.",
+      "What are the trade-offs between using a CSS framework like Tailwind CSS versus writing custom CSS/SASS from scratch?",
+      "Explain the concept of 'RESTful' APIs. What makes an API RESTful compared to a simple HTTP endpoint?"
     ],
     medium: [
-      "How would you design a user authentication system?",
-      "Explain the differences between session-based and token-based authentication.",
-      "How do you handle file uploads in a full-stack application?",
-      "What are WebSockets and when would you use them?",
-      "How do you implement real-time features in web applications?"
+      "How would you implement a secure 'Reset Password' flow, from the user clicking 'Forgot Password' to them successfully setting a new one?",
+      "Scenario: You are building a real-time collaborative tool (like a shared document editor). Would you use WebSockets or Long Polling? Explain your choice and the technical challenges involved.",
+      "How do you approach testing a full-stack application? Explain your strategy for Unit, Integration, and End-to-End (E2E) testing.",
+      "Explain the concept of JWT (JSON Web Tokens). How do you securely store them on the frontend, and how does the backend verify them?",
+      "You are tasked with optimizing the SEO of a React-based SPA. What techniques would you use (e.g., SSR, Next.js, Dynamic Rendering) and why?"
     ],
     hard: [
-      "Design a scalable architecture for a social media platform.",
-      "How would you implement a real-time chat application?",
-      "Explain how you would handle deployment and CI/CD for a full-stack app.",
-      "How would you optimize both frontend and backend performance?",
-      "Design a system for handling user-generated content at scale."
+      "Design the architecture for a large-scale social media platform (like Twitter or Instagram). How would you handle the 'Follower' model and the generation of a user's news feed?",
+      "Scenario: Your application needs to handle large file uploads (up to 5GB). How would you design the system to be resilient, support resumes, and not block the main server process?",
+      "Explain how you would implement a multi-tenant SaaS application where each customer's data must be logically or physically isolated.",
+      "Walk me through your strategy for a database migration that involves changing a core data structure in a live production environment with zero downtime.",
+      "How would you design a global content delivery strategy for a web application to ensure low latency for users in different continents?"
     ]
   },
   "Data Scientist": {
     easy: [
-      "What is the difference between supervised and unsupervised learning?",
-      "Explain what pandas library is used for in Python.",
-      "What is the purpose of data visualization?",
-      "What are the basic steps in a data science project?",
-      "Explain what a dataset is and types of data."
+      "Explain the difference between a list and a numpy array in Python. In what scenario would you prefer one over the other for data processing?",
+      "What is the 'Bias-Variance Tradeoff'? How would you explain this concept to someone who isn't a data scientist?",
+      "Scenario: You are given a dataset with 30% missing values in a critical column. What are your initial thoughts on how to handle this?",
+      "What is the purpose of an 'Exploratory Data Analysis' (EDA)? What are the first three visualizations you usually create?",
+      "Explain the difference between 'Supervised' and 'Unsupervised' learning with a real-world example for each."
     ],
     medium: [
-      "How do you handle missing data in a dataset?",
-      "Explain cross-validation and why it's important.",
-      "What is feature engineering and why is it crucial?",
-      "How do you evaluate the performance of a machine learning model?",
-      "Explain the bias-variance tradeoff."
+      "Scenario: Your model is performing exceptionally well on the training data but poorly on the test data. What is likely happening, and what are three specific techniques you would use to fix it?",
+      "How do you decide which evaluation metric to use (e.g., Precision, Recall, F1-Score, RMSE) for a specific business problem? Give an example.",
+      "Explain the concept of 'Feature Selection'. How do you determine which features are most important for your model?",
+      "What is Cross-Validation, and why is it preferred over a simple Train/Test split in most scenarios?",
+      "Scenario: You are working with an imbalanced dataset where the target class only appears in 1% of the records. How would you approach model training and evaluation?"
     ],
     hard: [
-      "How would you design an A/B testing framework?",
-      "Explain how you would build a recommendation system at scale.",
-      "How do you handle class imbalance in machine learning?",
-      "Design a real-time machine learning pipeline.",
-      "Explain different techniques for dimensionality reduction."
+      "Design a system for deploying and monitoring a machine learning model in production. How do you handle 'Model Drift' over time?",
+      "Explain the mathematical intuition behind Gradient Descent. How do you choose the learning rate, and what happens if it's too high or too low?",
+      "Scenario: You need to build a recommendation engine for an e-commerce site with millions of products. Walk me through your choice of algorithm (Collaborative Filtering vs Content-Based) and how you would scale it.",
+      "How would you approach a 'Cold Start' problem in a recommendation system?",
+      "Explain the architecture of a Transformer model. Why have Transformers largely replaced RNNs/LSTMs for NLP tasks?"
     ]
   },
   "DevOps Engineer": {
     easy: [
-      "What is DevOps and why is it important?",
-      "Explain the difference between CI and CD.",
-      "What is containerization and why use Docker?",
-      "What is version control and why use Git?",
-      "Explain what cloud computing is."
+      "What is the core philosophy of DevOps? How does it differ from traditional 'Siloed' development and operations teams?",
+      "Explain the concept of 'Infrastructure as Code' (IaC). What are the benefits of managing infrastructure through code rather than manual configuration?",
+      "Scenario: A developer says 'it works on my machine but not in production.' How does Docker help solve this problem?",
+      "What is the difference between Continuous Integration (CI) and Continuous Deployment (CD)?",
+      "Explain the purpose of a Load Balancer. In what scenario would you need to add one to your infrastructure?"
     ],
     medium: [
-      "How would you implement a CI/CD pipeline?",
-      "Explain Infrastructure as Code (IaC) and its benefits.",
-      "What is container orchestration and how does Kubernetes work?",
-      "How do you implement monitoring and logging in production?",
-      "Explain different deployment strategies (blue-green, canary, etc.)."
+      "Scenario: Your production server is running out of disk space every few days due to logs. How would you automate a long-term solution for this?",
+      "How do you approach securing a Kubernetes cluster? What are the top three security practices you would implement immediately?",
+      "Explain the concept of a 'Canary Deployment'. In what specific scenario would you choose it over a Blue-Green deployment?",
+      "How do you implement monitoring and alerting for a microservices-based application? What key metrics (SLIs/SLOs) would you track?",
+      "You need to migrate a legacy application from on-premise servers to the cloud (AWS/GCP/Azure). Walk me through your migration strategy."
     ],
     hard: [
-      "Design a highly available and scalable infrastructure for a web application.",
-      "How would you implement disaster recovery and backup strategies?",
-      "Explain how you would handle security in a DevOps pipeline.",
-      "Design a monitoring and alerting system for microservices.",
-      "How would you implement compliance and governance in cloud infrastructure?"
+      "Design a Disaster Recovery (DR) plan for a mission-critical application that requires an RTO (Recovery Time Objective) of less than 15 minutes.",
+      "Scenario: You are experiencing 'Dependency Hell' in your CI/CD pipeline, causing builds to take over 30 minutes. How would you optimize the pipeline for speed and reliability?",
+      "Explain how you would implement a 'GitOps' workflow using tools like ArgoCD or Flux. What are the advantages of this approach?",
+      "How do you handle secrets management at scale in a multi-cloud environment? Compare different tools like HashiCorp Vault vs. Cloud Native secrets.",
+      "Design a self-healing infrastructure that can automatically detect and recover from common failure patterns without human intervention."
     ]
   }
 };
@@ -222,17 +222,19 @@ router.post("/start", userMiddleware, async (req, res) => {
 
     // Try AI generation first
     if (genAI) {
-      const prompt = `Generate a technical interview question for ${role} with ${experience} years experience.
+      const prompt = `Generate a realistic technical interview question for a ${role} with ${experience} years of experience.
 
-Requirements:
-- One clear, specific question
-- Appropriate difficulty level
-- Be conversational
+CRITICAL GUIDELINES:
+- AVOID generic theoretical questions (e.g., "What is X?").
+- PREFER scenario-based or problem-solving questions (e.g., "You are building X, how would you handle Y?").
+- The question should require a detailed explanation, not a one-word answer.
+- Tailor the complexity strictly to ${experience} years of experience.
+- Be professional yet conversational, like a real senior interviewer.
 
-Respond in JSON:
+Respond in JSON format only:
 {
-  "question": "Your question",
-  "expectedTopics": ["topic1", "topic2"],
+  "question": "The specific interview question",
+  "expectedTopics": ["topic1", "topic2", "topic3"],
   "difficulty": "easy|medium|hard"
 }`;
 
@@ -338,12 +340,17 @@ ANSWER: ${answer}
 ROLE: ${session.role}
 EXPERIENCE: ${session.experience} years
 
+CRITERIA:
+- Depth: Penalize short, one-word, or one-line answers unless appropriate.
+- Accuracy: Check technical correctness.
+- Communication: Clarity and professionalism.
+
 Respond in JSON only:
 {
   "score": 1-10,
-  "feedback": "Brief feedback (1-2 sentences)",
-  "strengths": ["strength1", "strength2"],
-  "improvements": ["improvement1", "improvement2"],
+  "feedback": "Detailed feedback (2-3 sentences). Mention if the answer was too short.",
+  "strengths": ["specific strength1", "specific strength2"],
+  "improvements": ["specific improvement1", "specific improvement2"],
   "technicalAccuracy": 1-10,
   "communication": 1-10,
   "depth": 1-10
@@ -406,15 +413,64 @@ Respond in JSON only:
     if (!isComplete) {
       const avgScore = session.scores.reduce((sum, score) => sum + score, 0) / session.scores.length;
       const nextDifficulty = avgScore >= 7.5 ? "hard" : avgScore >= 6 ? "medium" : "easy";
-      
       const usedQuestions = session.questions.map(q => q.question);
-      const questionText = getQuestionFromPool(session.role, nextDifficulty, usedQuestions);
 
-      nextQuestion = {
-        question: questionText,
-        expectedTopics: ["technical knowledge", "problem solving"],
-        difficulty: nextDifficulty,
-      };
+      // Try AI generation for next question
+      if (genAI) {
+        const nextQuestionPrompt = `Continue a ${session.role} interview for a candidate with ${session.experience} years experience.
+        
+CONTEXT:
+- Previous Question: ${currentQuestion.question}
+- Candidate's Answer: ${answer}
+- Evaluation Score: ${evaluation.score}/10
+- Interview Progress: Question ${questionNumber} of 10
+
+TASK:
+- Generate the NEXT interview question.
+- It should logically follow the conversation or explore a new relevant area.
+- AVOID these previously asked questions: ${JSON.stringify(usedQuestions)}
+- Follow the same realistic, scenario-based guidelines.
+
+Respond in JSON format only:
+{
+  "question": "The next interview question",
+  "expectedTopics": ["topic1", "topic2"],
+  "difficulty": "${nextDifficulty}"
+}`;
+
+        try {
+          const model = genAI.getGenerativeModel({ 
+            model: "gemini-1.5-flash",
+            generationConfig: FAST_CONFIG
+          });
+          
+          const result = await callAIWithTimeout(
+            model.generateContent({ contents: [{ parts: [{ text: nextQuestionPrompt }] }] }),
+            30000
+          );
+          
+          const response = await result.response;
+          const responseText = response.text();
+          const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+          
+          if (jsonMatch) {
+            nextQuestion = JSON.parse(jsonMatch[0]);
+            console.log("AI next question generated successfully");
+          }
+        } catch (aiError) {
+          console.log("AI next question generation failed, using fallback pool:", aiError.message);
+        }
+      }
+
+      // Fallback to pool if AI fails or is not available
+      if (!nextQuestion) {
+        const questionText = getQuestionFromPool(session.role, nextDifficulty, usedQuestions);
+        nextQuestion = {
+          question: questionText,
+          expectedTopics: ["technical knowledge", "problem solving"],
+          difficulty: nextDifficulty,
+        };
+      }
 
       session.questions.push(nextQuestion);
       session.currentQuestion = questionNumber + 1;

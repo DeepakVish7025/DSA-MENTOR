@@ -9,17 +9,27 @@ const Submission = require("../models/submission")
 const register = async (req,res)=>{
     
     try{
+        console.log("Registering user:", req.body.emailId);
         // validate the data;
-
       validate(req.body); 
       const {firstName, emailId, password}  = req.body;
 
-      req.body.password = await bcrypt.hash(password, 10);
-      req.body.role = 'user'
-    //
-    
-     const user =  await User.create(req.body);
-     const token =  jwt.sign({_id:user._id , emailId:emailId, role:'user'},process.env.JWT_KEY,{expiresIn: 60*60});
+      // Check if user already exists
+      const existingUser = await User.findOne({ emailId: emailId.toLowerCase() });
+      if (existingUser) {
+          return res.status(400).json({ message: "User already exists with this email" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      const user = await User.create({
+          firstName,
+          emailId: emailId.toLowerCase(),
+          password: hashedPassword,
+          role: 'user'
+      });
+
+     const token =  jwt.sign({_id:user._id , emailId:user.emailId, role:'user'},process.env.JWT_KEY,{expiresIn: 60*60});
      const reply = {
         firstName: user.firstName,
         emailId: user.emailId,
@@ -30,11 +40,12 @@ const register = async (req,res)=>{
      res.cookie('token',token,{maxAge: 60*60*1000});
      res.status(201).json({
         user:reply,
-        message:"Loggin Successfully"
+        message:"Registered and Logged in Successfully"
     })
     }
     catch(err){
-        res.status(400).send("Error: "+err);
+        console.error("Registration Error:", err.message);
+        res.status(400).json({ message: err.message || "Registration failed" });
     }
 }
 
@@ -50,6 +61,8 @@ const login = async (req,res)=>{
             throw new Error("Invalid Credentials");
 
         const user = await User.findOne({emailId});
+        if(!user)
+            throw new Error("Invalid Credentials");
 
         const match = await bcrypt.compare(password,user.password);
 
@@ -63,6 +76,7 @@ const login = async (req,res)=>{
             role:user.role,
         }
 
+        // IMPORTANT: Payload MUST include role for adminMiddleware to work
         const token =  jwt.sign({_id:user._id , emailId:emailId, role:user.role},process.env.JWT_KEY,{expiresIn: 60*60});
         res.cookie('token',token,{maxAge: 60*60*1000});
         res.status(201).json({
@@ -71,7 +85,7 @@ const login = async (req,res)=>{
         })
     }
     catch(err){
-        res.status(401).send("Error: "+err);
+        res.status(401).send("Error: "+err.message);
     }
 }
 
@@ -82,17 +96,16 @@ const logout = async(req,res)=>{
 
     try{
         const {token} = req.cookies;
-        const payload = jwt.decode(token);
+        if (token) {
+            const payload = jwt.decode(token);
+            if (payload && payload.exp) {
+                await redisClient.set(`token:${token}`,'Blocked');
+                await redisClient.expireAt(`token:${token}`,payload.exp);
+            }
+        }
 
-
-        await redisClient.set(`token:${token}`,'Blocked');
-        await redisClient.expireAt(`token:${token}`,payload.exp);
-    //    Token add kar dung Redis ke blockList
-    //    Cookies ko clear kar dena.....
-
-    res.cookie("token",null,{expires: new Date(Date.now())});
-    res.send("Logged Out Succesfully");
-
+        res.cookie("token",null,{expires: new Date(Date.now())});
+        res.send("Logged Out Succesfully");
     }
     catch(err){
        res.status(503).send("Error: "+err);
@@ -103,21 +116,38 @@ const logout = async(req,res)=>{
 const adminRegister = async(req,res)=>{
     try{
         // validate the data;
-    //   if(req.result.role!='admin')
-    //     throw new Error("Invalid Credentials");  
       validate(req.body); 
       const {firstName, emailId, password}  = req.body;
 
-      req.body.password = await bcrypt.hash(password, 10);
-    //
-    
-     const user =  await User.create(req.body);
-     const token =  jwt.sign({_id:user._id , emailId:emailId, role:user.role},process.env.JWT_KEY,{expiresIn: 60*60});
+      // Check if admin already exists
+      const existingUser = await User.findOne({ emailId: emailId.toLowerCase() });
+      if (existingUser) {
+          return res.status(400).json({ message: "Admin/User already exists with this email" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      const user = await User.create({
+          firstName,
+          emailId: emailId.toLowerCase(),
+          password: hashedPassword,
+          role: 'admin' // FORCE role to admin
+      });
+
+     const token =  jwt.sign({_id:user._id , emailId:user.emailId, role:user.role},process.env.JWT_KEY,{expiresIn: 60*60});
      res.cookie('token',token,{maxAge: 60*60*1000});
-     res.status(201).send("User Registered Successfully");
+     res.status(201).json({
+         message: "Admin Registered Successfully",
+         user: {
+             firstName: user.firstName,
+             emailId: user.emailId,
+             role: user.role
+         }
+     });
     }
     catch(err){
-        res.status(400).send("Error: "+err);
+        console.error("Admin Registration Error:", err.message);
+        res.status(400).json({ message: err.message || "Admin registration failed" });
     }
 }
 

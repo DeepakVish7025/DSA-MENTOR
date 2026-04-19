@@ -16,6 +16,7 @@ const videoRouter = require('./routes/videoCreator');
 const interviewRoutes = require('./routes/interviewRoutes');
 const contestRoutes = require("./routes/contestRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
+const courseProgressRoutes = require("./routes/courseProgressRoutes");
 
 
 
@@ -41,6 +42,7 @@ app.use('/api/interview', interviewRoutes);
 
 app.use("/api/contests", contestRoutes);
 app.use("/api/certificates", certificateRoutes);
+app.use("/api/course-progress", courseProgressRoutes);
 
 const InitalizeConnection = async () => {
     try {

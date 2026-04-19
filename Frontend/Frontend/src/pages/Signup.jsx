@@ -16,7 +16,7 @@ const signupSchema = z.object({
     .string()
     .min(1, 'Email is required')
     .email('Invalid email format'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(4, 'Password must be at least 4 characters'),
   confirmPassword: z.string().min(1, 'Please confirm your password'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match.',
@@ -48,6 +48,27 @@ function Signup() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated, loading, error } = useSelector((s) => s.auth);
+
+  useEffect(() => {
+    /* global google */
+    // google login logic disabled until client_id is provided
+    /*
+    if (window.google) {
+      google.accounts.id.initialize({
+        client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com", 
+        callback: handleGoogleResponse,
+      });
+      google.accounts.id.renderButton(
+        document.getElementById("googleSignUpDiv"),
+        { theme: "outline", size: "large", width: "100%", text: "signup_with" }
+      );
+    }
+    */
+  }, []);
+
+  const handleGoogleResponse = (response) => {
+    // dispatch(googleLoginUser(response.credential));
+  };
 
   const {
     register,
@@ -250,6 +271,9 @@ function Signup() {
           <span style={styles.dividerText}>or</span>
           <div style={styles.dividerLine} />
         </div>
+
+        {/* Google Signup (Disabled) */}
+        {/* <div id="googleSignUpDiv" style={{ marginTop: '1rem', width: '100%', display: 'flex', justifyContent: 'center' }}></div> */}
 
         <p style={styles.footerTxt}>
           Already have an account?{' '}

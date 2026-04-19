@@ -7,6 +7,7 @@ import { VideoCameraIcon, DocumentTextIcon, ChatBubbleLeftEllipsisIcon, PaperCli
 import Certificate from '../components/Certificate';
 import { useSelector } from 'react-redux';
 import { Trophy } from 'lucide-react';
+import axiosClient from '../utils/axiosClient';
 
 const mockDiscussions = [
   {
@@ -40,24 +41,48 @@ const CourseContentPage = () => {
   const [expandedModules, setExpandedModules] = useState({});
   const [completedLectures, setCompletedLectures] = useState({});
 
-  // Load progress from localStorage on mount
+  // Load progress from Backend on mount
   useEffect(() => {
-    const savedProgress = localStorage.getItem(`course_progress_${courseId}`);
-    if (savedProgress) {
+    const fetchProgress = async () => {
       try {
-        setCompletedLectures(JSON.parse(savedProgress));
-      } catch (e) {
-        console.error("Error parsing saved progress", e);
+        const response = await axiosClient.get(`/api/course-progress/${courseId}`);
+        if (response.data && response.data.completedLectures) {
+          setCompletedLectures(response.data.completedLectures);
+        }
+      } catch (err) {
+        console.error("Error fetching course progress from backend", err);
+        // Fallback to localStorage if backend fails (optional, but good for migration)
+        const savedProgress = localStorage.getItem(`course_progress_${courseId}`);
+        if (savedProgress) {
+          try {
+            setCompletedLectures(JSON.parse(savedProgress));
+          } catch (e) {
+            console.error("Error parsing saved progress", e);
+          }
+        }
       }
+    };
+    if (user && courseId) {
+      fetchProgress();
     }
-  }, [courseId]);
+  }, [courseId, user]);
 
-  // Save progress to localStorage whenever it changes
+  // Save progress to Backend whenever it changes
   useEffect(() => {
-    if (Object.keys(completedLectures).length > 0) {
-      localStorage.setItem(`course_progress_${courseId}`, JSON.stringify(completedLectures));
+    const saveProgress = async () => {
+      try {
+        await axiosClient.post(`/api/course-progress/${courseId}`, {
+          completedLectures
+        });
+      } catch (err) {
+        console.error("Error saving course progress to backend", err);
+      }
+    };
+    
+    if (user && courseId && Object.keys(completedLectures).length > 0) {
+      saveProgress();
     }
-  }, [completedLectures, courseId]);
+  }, [completedLectures, courseId, user]);
 
   const TABS_CONFIG = [
     {

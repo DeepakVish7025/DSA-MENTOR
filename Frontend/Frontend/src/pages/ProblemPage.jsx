@@ -56,12 +56,23 @@ const ProblemPage = () => {
     fetchProblem();
   }, [problemId]);
 
-  useEffect(() => {
-    if (problem) {
-      const initialCode = problem.startCode.find(sc => sc.language === langMap[selectedLanguage])?.initialCode || '';
-      setCode(initialCode);
-    }
-  }, [selectedLanguage, problem]);
+const normalizeLang = (lang) => {
+  if (lang === "js") return "javascript";
+  if (lang === "c++") return "cpp";
+  return lang.toLowerCase();
+};
+
+useEffect(() => {
+  if (problem && problem.startCode) {
+    const lang = normalizeLang(selectedLanguage);
+
+    const codeObj = problem.startCode.find(
+      sc => sc.language.toLowerCase() === lang
+    );
+
+    setCode(codeObj?.initialCode || "// No start code");
+  }
+}, [selectedLanguage, problem]);
 
   const handleEditorChange = (value) => setCode(value || '');
   const handleEditorDidMount = (editor) => { editorRef.current = editor; };

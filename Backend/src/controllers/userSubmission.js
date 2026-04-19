@@ -51,6 +51,10 @@ const submitCode = async (req,res)=>{
     
     const submitResult = await submitBatch(submissions);
     
+    if(!submitResult || submitResult.length === 0){
+        return res.status(500).send("No submission results received");
+    }
+
     const resultToken = submitResult.map((value)=> value.token);
 
     const testResult = await submitToken(resultToken);
@@ -185,8 +189,12 @@ const runCode = async(req,res)=>{
 
 
    const submitResult = await submitBatch(submissions);
-   
-   const resultToken = submitResult.map((value)=> value.token);
+    
+    if(!submitResult || submitResult.length === 0){
+        return res.status(500).send("No submission results received");
+    }
+    
+    const resultToken = submitResult.map((value)=> value.token);
 
    const testResult = await submitToken(resultToken);
 

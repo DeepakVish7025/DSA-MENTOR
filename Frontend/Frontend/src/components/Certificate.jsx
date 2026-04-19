@@ -5,15 +5,36 @@ import QRCode from 'qrcode';
 import axiosClient from '../utils/axiosClient';
 
 const Certificate = ({
-  userName = 'Rahul Sharma',
+  userName: propUserName = 'Valued Student',
   courseName = 'Data Structures & Algorithms',
   date = 'April 03, 2026',
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [certId] = useState(() =>
-    'DM-' + Math.floor(100000 + Math.random() * 900000)
-  );
+  const [certId, setCertId] = useState(null);
+  const [actualUserName, setActualUserName] = useState(propUserName);
   const [fontsReady, setFontsReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrCreateCertificate = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axiosClient.post('/api/certificates/issue', {
+          courseName
+        });
+        if (response.data) {
+          setCertId(response.data.certId);
+          setActualUserName(response.data.userName);
+        }
+      } catch (err) {
+        console.error("Error fetching/issuing certificate:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrCreateCertificate();
+  }, [courseName]);
 
   useEffect(() => {
     const id = 'cert-gfonts';
@@ -31,6 +52,8 @@ const Certificate = ({
 
   // ───────────────── DRAW CERTIFICATE ─────────────────
   const drawCertificate = async (ctx, W, H) => {
+    if (!certId) return; // Don't draw without ID
+
   const C = {
     dark: '#0f172a',
     gold: '#d4af37',
@@ -140,9 +163,9 @@ const Certificate = ({
   // ───── Name ─────
   ctx.fillStyle = C.dark;
   ctx.font = '900 60px Montserrat';
-  ctx.fillText(userName, W / 2, 340);
+  ctx.fillText(actualUserName, W / 2, 340);
 
-  const nameWidth = ctx.measureText(userName).width;
+  const nameWidth = ctx.measureText(actualUserName).width;
   ctx.fillStyle = C.gold;
   ctx.fillRect(W / 2 - nameWidth / 2, 355, nameWidth, 3);
 
@@ -224,24 +247,12 @@ const Certificate = ({
 
   // ───────────────── DOWNLOAD PDF ─────────────────
   const downloadCertificate = async () => {
-    if (isGenerating) return;
+    if (isGenerating || !certId) return;
     setIsGenerating(true);
 
     try {
-      // 1. Issue certificate in backend
-      try {
-        const response = await axiosClient.post('/api/certificates/issue', {
-          certId,
-          userName,
-          courseName
-        });
-        console.log("Certificate issued/verified in DB:", response.data);
-      } catch (issueErr) {
-        console.error("Backend issue error details:", issueErr.response?.data || issueErr.message);
-        // We still let them download, but alert that verification might not work
-        alert(`Verification registration failed: ${issueErr.response?.data?.message || issueErr.message}. Your certificate will download, but public verification might be unavailable.`);
-      }
-
+      // Certificate is already issued/fetched on mount, so we just proceed to download
+      
       // 2. Capture and download
       document.body.style.colorScheme = 'light';
 
@@ -271,7 +282,7 @@ const Certificate = ({
       pdf.addImage(imgData, 'PNG', 0, 0, W, H, undefined, 'FAST');
 
       pdf.save(
-        `${userName.replace(/\s+/g, '_')}_DSA_Mentor_Certificate.pdf`
+        `${actualUserName.replace(/\s+/g, '_')}_DSA_Mentor_Certificate.pdf`
       );
     } catch (err) {
       console.error(err);
@@ -281,35 +292,70 @@ const Certificate = ({
     }
   };
 
-  return (
-    <div className="flex flex-col items-center gap-6 p-6">
-      <button
-        onClick={downloadCertificate}
-        disabled={isGenerating || !fontsReady}
-        className="flex items-center gap-4 px-10 py-5 bg-[#1e293b] text-white rounded-2xl font-black text-xl shadow-2xl transition-all active:scale-95"
-      >
-        {isGenerating ? (
-          <>
-            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white"></div>
-            Generating...
-          </>
-        ) : !fontsReady ? 'Loading Fonts...' : (
-          <>
-            <Download className="w-6 h-6 animate-bounce" />
-            Download Professional Certificate
-          </>
-        )}
-      </button>
+  useEffect(() => {
+    if (certId && fontsReady) {
+      const canvas = document.getElementById('certificate-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        drawCertificate(ctx, canvas.width, canvas.height);
+      }
+    }
+  }, [certId, fontsReady, actualUserName]);
 
-      <div className="flex gap-6 text-slate-500 text-xs font-bold">
-        <span className="flex items-center gap-1">
-          <ShieldCheck size={14} className="text-green-500" />
-          ISO Verified
-        </span>
-        <span className="flex items-center gap-1">
-          <Award size={14} className="text-yellow-500" />
-          Official Certification
-        </span>
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        <p className="text-slate-400 font-medium">Preparing your certificate...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center space-y-6">
+      <div className="relative group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+        <div className="relative bg-slate-900 rounded-xl overflow-hidden shadow-2xl border border-white/10">
+          <canvas
+            id="certificate-canvas"
+            width={800}
+            height={600}
+            className="w-full max-w-2xl h-auto"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4">
+        <button
+          onClick={downloadCertificate}
+          disabled={isGenerating || !certId}
+          className="flex items-center justify-center px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-orange-500/25 disabled:opacity-50 disabled:cursor-not-allowed group"
+        >
+          {isGenerating ? (
+            <div className="flex items-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+              GENERATING PDF...
+            </div>
+          ) : (
+            <>
+              <Download className="mr-3 group-hover:translate-y-1 transition-transform" />
+              DOWNLOAD CERTIFICATE (PDF)
+            </>
+          )}
+        </button>
+
+        <button
+          onClick={() => window.open(`/verify-certificate/${certId}`, '_blank')}
+          className="flex items-center justify-center px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all border border-white/20 backdrop-blur-sm"
+        >
+          <ShieldCheck className="mr-3" />
+          VERIFY ONLINE
+        </button>
+      </div>
+
+      <div className="flex items-center text-slate-500 text-sm">
+        <Award size={16} className="mr-2 text-orange-500" />
+        Verified Professional Certification • ID: {certId}
       </div>
     </div>
   );

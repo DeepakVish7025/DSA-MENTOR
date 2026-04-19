@@ -85,7 +85,7 @@ function App() {
               <Homepage />
             </Layout>
           ) : (
-            <Navigate to="/signup" />
+            <Navigate to="/login" />
           )
         } />
 
@@ -97,7 +97,7 @@ function App() {
               <CoursesPage />
             </Layout>
           ) : (
-            <Navigate to="/signup" />
+            <Navigate to="/login" />
           )
         } />
 
@@ -107,7 +107,7 @@ function App() {
               <DocumentationPage />
             </Layout>
           ) : (
-            <Navigate to="/signup" />
+            <Navigate to="/login" />
           )
         } />
 
@@ -118,7 +118,7 @@ function App() {
       <CourseOverviewPage />
     </Layout>
   ) : (
-    <Navigate to="/signup" />
+    <Navigate to="/login" />
   )
 } />
         
@@ -130,7 +130,7 @@ function App() {
       <CourseContentPage/>
     </Layout>
   ) : (
-    <Navigate to="/signup" />
+    <Navigate to="/login" />
   )
 } />
 
@@ -140,7 +140,7 @@ function App() {
               <Leaderboard />
             </Layout>
           ) : (
-            <Navigate to="/signup" />
+            <Navigate to="/login" />
           )
         } />
 
@@ -150,7 +150,7 @@ function App() {
               <AboutUs/>
             </Layout>
           ) : (
-            <Navigate to="/signup" />
+            <Navigate to="/login" />
           )
         } />
 
@@ -161,7 +161,7 @@ function App() {
               <InterviewPrepStudio/>
             </Layout>
           ) : (
-            <Navigate to="/signup" />
+            <Navigate to="/login" />
           )
         } />
 
@@ -172,7 +172,7 @@ function App() {
               <PrivacyPolicyPage/>
             </Layout>
           ) : (
-            <Navigate to="/signup" />
+            <Navigate to="/login" />
           )
         } />
         
@@ -183,7 +183,7 @@ function App() {
               <Contest />
             </Layout>
           ) : (
-            <Navigate to="/signup" />
+            <Navigate to="/login" />
           )
         } />
 
@@ -193,7 +193,7 @@ function App() {
               <ContestDetail />
             </Layout>
           ) : (
-            <Navigate to="/signup" />
+            <Navigate to="/login" />
           )
         } />
 

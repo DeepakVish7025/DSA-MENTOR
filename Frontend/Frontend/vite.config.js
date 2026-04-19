@@ -4,6 +4,13 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(),  tailwindcss()],
-  
+  plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    include: ['react-syntax-highlighter', 'react-syntax-highlighter/dist/esm/styles/prism', 'react-syntax-highlighter/dist/esm/languages/prism/javascript'],
+  },
+  server: {
+    fs: {
+      strict: false,
+    },
+  },
 })

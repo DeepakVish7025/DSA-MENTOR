@@ -1,22 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Video, Mic, MicOff, VideoOff, User, Bot, Send, RotateCcw, X, Volume2, VolumeX } from 'lucide-react';
-
-// Mock authentication context
-const useAuth = () => {
-  const [user] = useState({ 
-    _id: 'demo123', 
-    email: 'demo@example.com',
-    name: 'Demo User'
-  });
-  const [token] = useState('demo_token_123');
-  return { user, token };
-};
+import { Video, Mic, MicOff, VideoOff, User, Bot, Send, RotateCcw, X, Volume2, VolumeX, Loader2, Award, BookOpen, Clock, AlertCircle, Play, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import axiosClient from '../utils/axiosClient';
 
 // Speech recognition support check
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 const InterviewPrepStudio = () => {
-  const { token, user } = useAuth();
+  const { user } = useSelector((state) => state.auth);
   
   // Interview session state
   const [session, setSession] = useState(null);
@@ -51,49 +42,7 @@ const InterviewPrepStudio = () => {
   const recognitionRef = useRef(null);
   const resultDivRef = useRef(null);
 
-  // Mock API calls for demo
-  const mockStartInterview = () => {
-    return {
-      sessionId: 'mock123',
-      question: "Let's say you're building a simple to-do list application. The user can add items, mark them as complete, and delete them. Describe how you would structure your frontend code to manage the list of to-do items, considering both the data structure you'd use and how you'd update the UI when items are added, completed, or deleted. We can focus on just the JavaScript/Frontend aspects for now, ignoring backend implementation.",
-      questionNumber: 1,
-      expectedTopics: ["State Management", "DOM Manipulation", "Event Handling", "Data Structures"],
-      difficulty: "medium"
-    };
-  };
 
-  const mockSubmitAnswer = (questionNumber) => {
-    if (questionNumber >= 10) {
-      return {
-        isComplete: true,
-        evaluation: {
-          score: 8,
-          feedback: "Great explanation of state management and UI updates. You demonstrated good understanding of frontend architecture.",
-          technicalAccuracy: 8,
-          communication: 9,
-          depth: 7,
-          strengths: ["Clear structure", "Good examples"],
-          improvements: ["Could mention performance optimizations"]
-        }
-      };
-    }
-    return {
-      isComplete: false,
-      nextQuestion: "How would you handle asynchronous operations in your frontend application?",
-      questionNumber: questionNumber + 1,
-      expectedTopics: ["Promises", "Async/Await", "Error Handling"],
-      difficulty: "medium",
-      evaluation: {
-        score: 8,
-        feedback: "Good explanation! You covered the key concepts well.",
-        technicalAccuracy: 8,
-        communication: 8,
-        depth: 7,
-        strengths: ["Clear structure", "Good examples"],
-        improvements: ["Could add more detail on edge cases"]
-      }
-    };
-  };
 
   // Initialize speech recognition
   useEffect(() => {
@@ -242,10 +191,15 @@ const InterviewPrepStudio = () => {
     setRecognitionError(null);
     
     try {
-      // Mock API call
-      const response = mockStartInterview();
+      // Real API call
+      const response = await axiosClient.post('/api/interview/start', {
+        role,
+        experience
+      });
       
-      setSession(response);
+      const interviewData = response.data;
+      
+      setSession(interviewData);
       setStartTime(new Date());
       setVideoOnTime(0);
       setTotalTime(0);
@@ -258,13 +212,13 @@ const InterviewPrepStudio = () => {
       // Speak the question
       if (speechEnabled) {
         setTimeout(() => {
-          speakText(`Question ${response.questionNumber} of 10. ${response.question}`);
+          speakText(`Question ${interviewData.questionNumber} of 10. ${interviewData.question}`);
         }, 1000);
       }
       
     } catch (error) {
       console.error("Error starting interview:", error);
-      setRecognitionError("Failed to start interview: " + error.message);
+      setRecognitionError("Failed to start interview: " + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -280,41 +234,50 @@ const InterviewPrepStudio = () => {
     setLoading(true);
     
     try {
-      const response = mockSubmitAnswer(session.questionNumber);
+      // Real API call
+      const response = await axiosClient.post('/api/interview/answer', {
+        sessionId: session.sessionId,
+        answer,
+        questionNumber: session.questionNumber
+      });
       
-      const newScores = [...scores, response.evaluation.score];
+      const interviewData = response.data;
+      
+      const newScores = [...scores, interviewData.evaluation.score];
       setScores(newScores);
       
-      if (response.isComplete) {
-        const mockReport = {
-          overallScore: 82,
-          recommendation: "hire",
-          summary: "Candidate showed strong technical knowledge and communication skills throughout the interview.",
-          technicalSkills: { score: 8, feedback: "Strong understanding of frontend concepts" },
-          communication: { score: 9, feedback: "Clear and articulate responses" },
-          problemSolving: { score: 7, feedback: "Good problem-solving approach" },
-          videoPresence: { score: 8, feedback: "Professional presentation" },
-          strengths: ["Clear communication", "Technical depth", "Structured thinking"],
-          areasForImprovement: ["Could elaborate more on edge cases", "Performance considerations"],
-          detailedFeedback: "Overall excellent performance with room for minor improvements in technical depth."
-        };
+      if (interviewData.isComplete) {
+        // Generate final report from backend
+        try {
+          const reportResponse = await axiosClient.post('/api/interview/generate-report', {
+            sessionId: session.sessionId
+          });
+          setFinalReport(reportResponse.data);
+        } catch (reportErr) {
+          console.error("Error generating report:", reportErr);
+          // Fallback to basic report if generation fails
+          setFinalReport({
+            overallScore: Math.round((newScores.reduce((a,b) => a+b, 0) / newScores.length) * 10),
+            recommendation: "Review Needed",
+            summary: "Interview completed. Please check detailed feedback for each question."
+          });
+        }
         
-        setFinalReport(mockReport);
-        setSession(prev => ({ ...prev, isComplete: true, evaluation: response.evaluation }));
+        setSession(prev => ({ ...prev, isComplete: true, evaluation: interviewData.evaluation }));
       } else {
         setSession(prev => ({
           ...prev,
-          question: response.nextQuestion,
-          questionNumber: response.questionNumber,
-          expectedTopics: response.expectedTopics,
-          difficulty: response.difficulty,
-          evaluation: response.evaluation,
+          question: interviewData.nextQuestion,
+          questionNumber: interviewData.questionNumber,
+          expectedTopics: interviewData.expectedTopics,
+          difficulty: interviewData.difficulty,
+          evaluation: interviewData.evaluation,
           isComplete: false
         }));
         
         if (speechEnabled) {
           setTimeout(() => {
-            speakText(`Question ${response.questionNumber} of 10. ${response.nextQuestion}`);
+            speakText(`Question ${interviewData.questionNumber} of 10. ${interviewData.nextQuestion}`);
           }, 2000);
         }
       }
@@ -324,7 +287,7 @@ const InterviewPrepStudio = () => {
       
     } catch (error) {
       console.error("Error submitting answer:", error);
-      setRecognitionError("Failed to submit answer: " + error.message);
+      setRecognitionError("Failed to submit answer: " + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }

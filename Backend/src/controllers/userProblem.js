@@ -12,18 +12,19 @@ const createProblem = async (req,res)=>{
         referenceSolution, problemCreator
     } = req.body;
 
+    // Validate request body
+    if (!title || !description || !difficulty || !tags || !visibleTestCases || !hiddenTestCases || !startCode || !referenceSolution) {
+        return res.status(400).send("Error: Missing required fields in request body");
+    }
 
     try{
        
       for(const {language,completeCode} of referenceSolution){
          
-
-        // source_code:
-        // language_id:
-        // stdin: 
-        // expectedOutput:
-
         const languageId = getLanguageById(language);
+        if (!languageId) {
+            return res.status(400).send(`Error: Unsupported language: ${language}`);
+        }
           
         // I am creating Batch submission
         const submissions = visibleTestCases.map((testcase)=>({
@@ -35,7 +36,9 @@ const createProblem = async (req,res)=>{
 
 
         const submitResult = await submitBatch(submissions);
-        // console.log(submitResult);
+        if (!submitResult || !Array.isArray(submitResult)) {
+            return res.status(500).send("Error: Failed to submit to Judge0 or unexpected response");
+        }
 
         const resultToken = submitResult.map((value)=> value.token);
 
@@ -43,12 +46,13 @@ const createProblem = async (req,res)=>{
         
        const testResult = await submitToken(resultToken);
 
-
-       console.log(testResult);
+       if (!testResult || !Array.isArray(testResult)) {
+           return res.status(500).send("Error: Failed to get test results from Judge0");
+       }
 
        for(const test of testResult){
         if(test.status_id!=3){
-         return res.status(400).send("Error Occured");
+         return res.status(400).send("Error: Test case failed. Problem not saved.");
         }
        }
 
