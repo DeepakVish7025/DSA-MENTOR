@@ -174,6 +174,7 @@ const ProblemPage = () => {
           <div className="flex overflow-x-auto no-scrollbar border-b border-white/5 bg-[#1e293b]/50">
             <TabButton id="description" label="Description" icon={BookOpen} active={activeLeftTab === 'description'} onClick={setActiveLeftTab} />
             <TabButton id="editorial" label="Editorial" icon={Video} active={activeLeftTab === 'editorial'} onClick={setActiveLeftTab} />
+            <TabButton id="solutions" label="Solutions" icon={Code2} active={activeLeftTab === 'solutions'} onClick={setActiveLeftTab} />
             <TabButton id="submissions" label="History" icon={History} active={activeLeftTab === 'submissions'} onClick={setActiveLeftTab} />
             <TabButton id="chatAI" label="AI" icon={MessageSquare} active={activeLeftTab === 'chatAI'} onClick={setActiveLeftTab} />
           </div>
@@ -252,6 +253,50 @@ const ProblemPage = () => {
                         <div className="p-8 border border-dashed border-white/10 rounded-xl text-center text-slate-500">
                           <Video size={40} className="mx-auto mb-2 opacity-20" />
                           <p className="text-sm">No video editorial available for this problem yet.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeLeftTab === 'solutions' && (
+                    <div className="space-y-6">
+                      <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                        <Code2 className="text-blue-400" size={24} /> Official Solutions
+                      </h2>
+                      
+                      {problem?.referenceSolution?.length > 0 ? (
+                        <div className="space-y-6">
+                          {problem.referenceSolution.map((sol, i) => (
+                            <div key={i} className="bg-[#1e293b]/50 rounded-xl overflow-hidden border border-white/5 shadow-xl">
+                              <div className="bg-slate-800/50 px-4 py-2.5 border-b border-white/5 flex justify-between items-center">
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">
+                                  {sol.language}
+                                </span>
+                                <button 
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(sol.completeCode);
+                                    toast.success(`${sol.language} solution copied!`);
+                                  }}
+                                  className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-all text-slate-400"
+                                >
+                                  Copy Code
+                                </button>
+                              </div>
+                              <div className="p-4 bg-[#0f172a]/50">
+                                <pre className="font-mono text-xs text-slate-300 overflow-x-auto custom-scrollbar leading-relaxed">
+                                  <code>{sol.completeCode}</code>
+                                </pre>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-12 border border-dashed border-white/10 rounded-2xl text-center">
+                          <div className="bg-slate-800/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                            <Code2 size={32} className="text-slate-600" />
+                          </div>
+                          <p className="text-slate-400 font-medium">No official solutions available yet.</p>
+                          <p className="text-slate-600 text-xs mt-1">Check back later or try solving it yourself!</p>
                         </div>
                       )}
                     </div>

@@ -49,7 +49,7 @@ export default function DocumentationPage() {
           <div className="bg-orange-500 p-1.5 rounded-lg shadow-lg shadow-orange-500/20">
             <Code size={18} className="text-white" />
           </div>
-          <span className="font-black tracking-tighter text-white">CODEMASTER <span className="text-orange-500">DOCS</span></span>
+          <span className="font-black tracking-tighter text-white">DSA-MENTOR <span className="text-orange-500">DOCS</span></span>
         </div>
         <button 
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -88,7 +88,7 @@ export default function DocumentationPage() {
               <div className="bg-orange-500 p-2 rounded-xl shadow-xl shadow-orange-500/20">
                 <Sparkles size={20} className="text-white" />
               </div>
-              <h1 className="text-xl font-black tracking-tighter text-white">CODEMASTER</h1>
+              <h1 className="text-xl font-black tracking-tighter text-white">DSA-MENTOR</h1>
             </div>
 
             <nav className="flex-1 overflow-y-auto space-y-1 custom-scrollbar pr-2">
@@ -155,7 +155,7 @@ export default function DocumentationPage() {
                 {activeSection === 'introduction' && (
                   <div className="space-y-6">
                     <p className="text-xl text-slate-400 leading-relaxed font-medium">
-                      CodeMaster is an elite-tier learning ecosystem architected to bridge the gap between academic theory and <span className="text-white font-bold underline decoration-orange-500">Technical Mastery.</span>
+                      DSA-MENTOR is an elite-tier learning ecosystem architected to bridge the gap between academic theory and <span className="text-white font-bold underline decoration-orange-500">Technical Mastery.</span>
                     </p>
                     <div className="grid md:grid-cols-2 gap-4">
                       {[
@@ -225,7 +225,7 @@ export default function DocumentationPage() {
               <div className="mt-20 p-8 rounded-3xl bg-gradient-to-r from-orange-600 to-orange-400 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-orange-500/20">
                 <div>
                   <h3 className="text-2xl font-black text-white">Ready to Master Code?</h3>
-                  <p className="text-orange-100 font-medium">Start your journey today on CodeMaster.</p>
+                  <p className="text-orange-100 font-medium">Start your journey today on DSA-MENTOR.</p>
                 </div>
                 <button className="bg-white text-orange-600 px-8 py-3 rounded-xl font-black hover:scale-105 transition-transform shadow-lg">
                   GO TO DASHBOARD

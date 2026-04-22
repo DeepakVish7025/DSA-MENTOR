@@ -1,560 +1,349 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../authSlice';
-import { User, LogOut, Settings, ChevronDown, ChevronUp, Menu, X } from 'lucide-react';
+import { User, LogOut, Settings, ChevronDown, Menu, X, Code2 } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user }  = useSelector(s => s.auth);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isDropdownOpen && !event.target.closest('.user-dropdown')) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDropdownOpen]);
+  const [dropOpen,   setDropOpen]   = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled,   setScrolled]   = useState(false);
 
+  const dropRef = useRef(null);
+
+  /* scroll shadow */
   useEffect(() => {
-    document.body.style.backgroundColor = '#111827';
-    document.body.style.margin = '0';
-    document.body.style.padding = '0';
-    document.body.style.color = 'white';
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  /* close dropdown on outside click */
   useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-  }, [isMobileMenuOpen]);
+    const handler = e => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) setDropOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
-    setIsDropdownOpen(false);
-    setIsMobileMenuOpen(false);
-  };
+  /* lock body scroll when mobile menu open */
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
-  };
+  const handleLogout = () => { dispatch(logoutUser()); setDropOpen(false); setMobileOpen(false); };
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
+  const navLinks = [
+    { to: '/',                   label: 'Problems' },
+    { to: '/contest',            label: 'Contests' },
+    { to: '/leaderboard',        label: 'Leaderboard' },
+    { to: '/verify-certificate', label: 'Verify' },
+    { to: '/documentation',      label: 'Docs' },
+    { to: '/courses',            label: 'Courses' },
+    { to: '/interview',          label: 'Interview' },
+  ];
 
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
+  /* shared active class helper */
+  const linkCls = ({ isActive }) =>
+    `text-[13.5px] font-medium px-3 py-1.5 rounded-xl transition-all duration-200 whitespace-nowrap
+     ${isActive
+       ? 'text-white bg-indigo-500/20'
+       : 'text-white/50 hover:text-white hover:bg-white/[0.07]'}`;
 
   return (
-    <>
+    <div className="min-h-screen bg-[#090e12] text-white font-sans">
+
+      {/* ── Fonts ── */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@700&display=swap');
-
-        body { font-family: 'DM Sans', sans-serif; }
-
-        .nav-wrapper {
-          position: sticky;
-          top: 0;
-          z-index: 50;
-          width: 100%;
-          padding: 14px 20px;
-          display: flex;
-          justify-content: center;
-        }
-
-        .nav-inner {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-          max-width: 1200px;
-          background: rgba(17, 24, 39, 0.6);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 18px;
-          padding: 10px 18px;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.05) inset;
-        }
-
-        .logo-link {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          text-decoration: none;
-        }
-
-        .logo-icon {
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          border-radius: 10px;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: 'Space Mono', monospace;
-          font-size: 10px;
-          font-weight: 700;
-          color: white;
-          flex-shrink: 0;
-        }
-
-        .logo-text {
-          font-family: 'Space Mono', monospace;
-          font-size: 16px;
-          font-weight: 700;
-          color: white;
-          letter-spacing: -0.5px;
-        }
-
-        .desktop-links {
-          display: flex;
-          align-items: center;
-          gap: 2px;
-        }
-
-        .nav-link {
-          color: rgba(255,255,255,0.55);
-          text-decoration: none;
-          font-size: 13.5px;
-          font-weight: 500;
-          padding: 6px 11px;
-          border-radius: 10px;
-          transition: all 0.2s ease;
-          white-space: nowrap;
-        }
-
-        .nav-link:hover {
-          color: white;
-          background: rgba(255,255,255,0.07);
-        }
-
-        .nav-link.active {
-          color: white;
-          background: rgba(99, 102, 241, 0.2);
-        }
-
-        .right-section {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .btn-login {
-          color: rgba(255,255,255,0.7);
-          text-decoration: none;
-          font-size: 13.5px;
-          font-weight: 500;
-          padding: 7px 14px;
-          border-radius: 10px;
-          transition: all 0.2s;
-        }
-
-        .btn-login:hover {
-          color: white;
-          background: rgba(255,255,255,0.07);
-        }
-
-        .btn-signup {
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          color: white;
-          text-decoration: none;
-          font-size: 13.5px;
-          font-weight: 600;
-          padding: 7px 16px;
-          border-radius: 10px;
-          transition: all 0.2s;
-          box-shadow: 0 2px 12px rgba(99,102,241,0.35);
-        }
-
-        .btn-signup:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 18px rgba(99,102,241,0.5);
-        }
-
-        .user-dropdown {
-          position: relative;
-        }
-
-        .avatar-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-          background: rgba(255,255,255,0.06);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 12px;
-          padding: 5px 12px 5px 5px;
-          transition: all 0.2s;
-        }
-
-        .avatar-btn:hover {
-          background: rgba(255,255,255,0.1);
-          border-color: rgba(255,255,255,0.18);
-        }
-
-        .avatar-img {
-          width: 30px;
-          height: 30px;
-          border-radius: 8px;
-          object-fit: cover;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        }
-
-        .avatar-name {
-          font-size: 13px;
-          font-weight: 600;
-          color: rgba(255,255,255,0.85);
-        }
-
-        .dropdown-menu {
-          position: absolute;
-          top: calc(100% + 10px);
-          right: 0;
-          min-width: 200px;
-          background: rgba(15, 23, 42, 0.97);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 14px;
-          padding: 6px;
-          box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-          animation: dropIn 0.15s ease;
-        }
-
-        @keyframes dropIn {
-          from { opacity: 0; transform: translateY(-6px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        .dropdown-item {
-          display: flex;
-          align-items: center;
-          gap: 9px;
-          padding: 8px 12px;
-          border-radius: 9px;
-          color: rgba(255,255,255,0.65);
-          font-size: 13.5px;
-          font-weight: 500;
-          text-decoration: none;
-          cursor: pointer;
-          background: none;
-          border: none;
-          width: 100%;
-          text-align: left;
-          transition: all 0.15s;
-        }
-
-        .dropdown-item:hover {
-          background: rgba(255,255,255,0.07);
-          color: white;
-        }
-
-        .dropdown-item.danger {
-          color: rgba(248,113,113,0.8);
-        }
-
-        .dropdown-item.danger:hover {
-          background: rgba(239, 68, 68, 0.12);
-          color: #f87171;
-        }
-
-        .dropdown-divider {
-          height: 1px;
-          background: rgba(255,255,255,0.07);
-          margin: 4px 0;
-        }
-
-        .mobile-menu-btn {
-          background: rgba(255,255,255,0.07);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: white;
-          cursor: pointer;
-          padding: 6px;
-          border-radius: 10px;
-          display: none;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .mobile-overlay {
-          position: fixed;
-          inset: 0;
-          z-index: 40;
-          background: rgba(0,0,0,0.6);
-          backdrop-filter: blur(4px);
-        }
-
-        .mobile-panel {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          z-index: 41;
-          background: #111827;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
-          padding: 16px 20px 24px;
-          animation: slideDown 0.2s ease;
-        }
-
-        @keyframes slideDown {
-          from { transform: translateY(-10px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-
-        .mobile-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 20px;
-        }
-
-        .mobile-close-btn {
-          background: rgba(255,255,255,0.07);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: white;
-          cursor: pointer;
-          padding: 6px;
-          border-radius: 10px;
-        }
-
-        .mobile-nav-links {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          margin-bottom: 20px;
-        }
-
-        .mobile-nav-link {
-          color: rgba(255,255,255,0.65);
-          text-decoration: none;
-          font-size: 15px;
-          font-weight: 500;
-          padding: 10px 12px;
-          border-radius: 10px;
-          transition: all 0.15s;
-          display: block;
-        }
-
-        .mobile-nav-link:hover,
-        .mobile-nav-link.active {
-          color: white;
-          background: rgba(99,102,241,0.15);
-        }
-
-        .mobile-divider {
-          height: 1px;
-          background: rgba(255,255,255,0.07);
-          margin: 8px 0 16px;
-        }
-
-        .mobile-user-info {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px 12px;
-          margin-bottom: 8px;
-        }
-
-        .mobile-avatar {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          object-fit: cover;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        }
-
-        .mobile-username {
-          font-size: 14px;
-          font-weight: 600;
-          color: white;
-        }
-
-        .mobile-auth-btns {
-          display: flex;
-          gap: 10px;
-          padding: 0 4px;
-        }
-
-        .mobile-auth-btns a {
-          flex: 1;
-          text-align: center;
-        }
-
-        @media (max-width: 768px) {
-          .desktop-links { display: none; }
-          .desktop-auth { display: none; }
-          .mobile-menu-btn { display: flex; }
-          .logo-text { display: none; }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@700&display=swap');
+        body { font-family: 'Space Grotesk', sans-serif; margin:0; padding:0; background:#090e12; }
+        .font-mono-jet { font-family: 'JetBrains Mono', monospace; }
+        @keyframes slideDown { from{transform:translateY(-8px);opacity:0} to{transform:translateY(0);opacity:1} }
+        @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
+        @keyframes dropIn    { from{transform:translateY(-6px) scale(0.97);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
+        .anim-slide { animation: slideDown 0.22s ease both; }
+        .anim-fade  { animation: fadeIn 0.2s ease both; }
+        .anim-drop  { animation: dropIn 0.15s ease both; }
       `}</style>
 
-      {/* Navigation Bar */}
-      <nav className="nav-wrapper">
-        <div className="nav-inner">
+      {/* ══════════════════════════════════════════════
+          NAVBAR
+      ══════════════════════════════════════════════ */}
+      <nav className={`sticky top-0 z-50 w-full flex justify-center px-4 py-3 transition-all duration-300
+                       ${scrolled ? 'bg-[#090e12]/80 backdrop-blur-xl' : ''}`}>
 
-          {/* Logo Section */}
-          <NavLink to="/" className="logo-link">
-            <div className="logo-icon">{'<DM>'}</div>
-            <span className="logo-text">DSA-MENTOR</span>
+        <div className={`w-full max-w-[1200px] flex items-center justify-between
+                         bg-white/[0.04] backdrop-blur-2xl
+                         border rounded-2xl px-4 py-2.5
+                         transition-all duration-300
+                         ${scrolled
+                           ? 'border-white/[0.1] shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
+                           : 'border-white/[0.07] shadow-[0_4px_24px_rgba(0,0,0,0.3)]'}`}>
+
+          {/* Logo */}
+          <NavLink to="/" className="flex items-center gap-2.5 no-underline shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600
+                            flex items-center justify-center shadow-[0_2px_12px_rgba(99,102,241,0.4)]">
+              <Code2 size={15} className="text-white"/>
+            </div>
+            <span className="font-mono-jet text-[15px] font-bold text-white hidden sm:block tracking-tight">
+              DSA<span className="text-indigo-400">—</span>MENTOR
+            </span>
           </NavLink>
 
-          {/* Desktop Navigation Links */}
-          <div className="desktop-links">
-            <NavLink to="/" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Problems</NavLink>
-            <NavLink to="/contest" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Contests</NavLink>
-            <NavLink to="/leaderboard" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Leaderboard</NavLink>
-            <NavLink to="/verify-certificate" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Verify</NavLink>
-            <NavLink to="/documentation" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Documentation</NavLink>
-            <NavLink to="/courses" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Courses</NavLink>
-            <NavLink to="/interview" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Interview</NavLink>
-  
+          {/* Desktop nav links */}
+          <div className="hidden lg:flex items-center gap-0.5">
+            {navLinks.map(l => (
+              <NavLink key={l.to} to={l.to} className={linkCls} end={l.to === '/'}>
+                {l.label}
+              </NavLink>
+            ))}
           </div>
 
-          {/* Right side - Desktop */}
-          <div className="right-section">
-            <div className="desktop-auth" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {/* Right: auth + hamburger */}
+          <div className="flex items-center gap-2">
+
+            {/* Desktop auth */}
+            <div className="hidden md:flex items-center gap-2">
               {user ? (
-                <div className="user-dropdown">
-                  <div className="avatar-btn" onClick={toggleDropdown}>
+                /* User dropdown */
+                <div className="relative" ref={dropRef}>
+                  <button
+                    onClick={() => setDropOpen(v => !v)}
+                    className="flex items-center gap-2 bg-white/[0.06] hover:bg-white/[0.1]
+                               border border-white/[0.1] hover:border-white/[0.18]
+                               rounded-xl px-2.5 py-1.5 transition-all duration-200 cursor-pointer"
+                  >
                     <img
                       src={user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
                       alt="avatar"
-                      className="avatar-img"
+                      className="w-7 h-7 rounded-lg object-cover bg-indigo-600"
                     />
-                    <span className="avatar-name">{user.username}</span>
-                    {isDropdownOpen ? <ChevronUp size={14} color="rgba(255,255,255,0.5)" /> : <ChevronDown size={14} color="rgba(255,255,255,0.5)" />}
-                  </div>
+                    <span className="text-[13px] font-semibold text-white/85 max-w-[90px] truncate">
+                      {user.username}
+                    </span>
+                    <ChevronDown size={13} className={`text-white/40 transition-transform duration-200 ${dropOpen ? 'rotate-180' : ''}`}/>
+                  </button>
 
-                  {isDropdownOpen && (
-                    <div className="dropdown-menu">
-                      <NavLink
-                        to="/profile"
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="dropdown-item"
-                      >
-                        <User size={14} /> Profile
+                  {dropOpen && (
+                    <div className="anim-drop absolute top-[calc(100%+8px)] right-0 min-w-[190px]
+                                    bg-[#0f172a]/98 backdrop-blur-xl
+                                    border border-white/[0.09] rounded-2xl p-1.5
+                                    shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+
+                      {/* User header */}
+                      <div className="flex items-center gap-2.5 px-3 py-2.5 mb-1">
+                        <img
+                          src={user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
+                          alt="avatar"
+                          className="w-8 h-8 rounded-xl object-cover bg-indigo-600"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold text-white truncate">{user.username}</p>
+                          <p className="text-[11px] text-white/40 truncate">{user.email || 'Member'}</p>
+                        </div>
+                      </div>
+
+                      <div className="h-px bg-white/[0.07] mx-1 mb-1"/>
+
+                      <NavLink to="/profile" onClick={() => setDropOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium
+                                   text-white/60 hover:text-white hover:bg-white/[0.07]
+                                   transition-all duration-150 no-underline">
+                        <User size={13}/> Profile
                       </NavLink>
 
                       {user.role === 'admin' && (
-                        <NavLink
-                          to="/admin"
-                          onClick={() => setIsDropdownOpen(false)}
-                          className="dropdown-item"
-                        >
-                          <Settings size={14} /> Admin Panel
+                        <NavLink to="/admin" onClick={() => setDropOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium
+                                     text-white/60 hover:text-white hover:bg-white/[0.07]
+                                     transition-all duration-150 no-underline">
+                          <Settings size={13}/> Admin Panel
                         </NavLink>
                       )}
 
-                      <div className="dropdown-divider" />
+                      <div className="h-px bg-white/[0.07] mx-1 my-1"/>
 
-                      <button className="dropdown-item danger" onClick={handleLogout}>
-                        <LogOut size={14} /> Logout
+                      <button onClick={handleLogout}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium
+                                   text-red-400/80 hover:text-red-400 hover:bg-red-500/[0.1]
+                                   transition-all duration-150 w-full text-left cursor-pointer bg-transparent border-none">
+                        <LogOut size={13}/> Logout
                       </button>
                     </div>
                   )}
                 </div>
+
               ) : (
                 <>
-                  <NavLink to="/login" className="btn-login">Log In</NavLink>
-                  <NavLink to="/signup" className="btn-signup">Sign Up</NavLink>
+                  <NavLink to="/login"
+                    className="text-[13.5px] font-medium text-white/60 hover:text-white
+                               px-3.5 py-1.5 rounded-xl hover:bg-white/[0.07]
+                               transition-all duration-200 no-underline">
+                    Log In
+                  </NavLink>
+                  <NavLink to="/signup"
+                    className="text-[13.5px] font-semibold text-white
+                               bg-gradient-to-r from-indigo-500 to-violet-600
+                               px-4 py-1.5 rounded-xl
+                               shadow-[0_2px_12px_rgba(99,102,241,0.4)]
+                               hover:shadow-[0_4px_20px_rgba(99,102,241,0.55)]
+                               hover:-translate-y-0.5
+                               transition-all duration-200 no-underline">
+                    Sign Up
+                  </NavLink>
                 </>
               )}
             </div>
 
-            {/* Mobile Menu Button */}
-            <button className="mobile-menu-btn" onClick={toggleMobileMenu}>
-              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {/* Hamburger */}
+            <button
+              onClick={() => setMobileOpen(v => !v)}
+              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl
+                         bg-white/[0.07] hover:bg-white/[0.11] border border-white/[0.1]
+                         text-white transition-all duration-200 cursor-pointer">
+              {mobileOpen ? <X size={18}/> : <Menu size={18}/>}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
+      {/* ══════════════════════════════════════════════
+          MOBILE MENU
+      ══════════════════════════════════════════════ */}
+      {mobileOpen && (
         <>
-          <div className="mobile-overlay" onClick={closeMobileMenu} />
-          <div className="mobile-panel">
-            <div className="mobile-header">
-              <NavLink to="/" className="logo-link" onClick={closeMobileMenu}>
-                <div className="logo-icon">{'<DM>'}</div>
-                <span className="logo-text" style={{ display: 'block' }}>DSA-MENTOR</span>
+          {/* Overlay */}
+          <div
+            className="anim-fade fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+
+          {/* Panel */}
+          <div className="anim-slide fixed top-0 left-0 right-0 z-50
+                          bg-[#0d1117] border-b border-white/[0.08]
+                          px-4 pt-4 pb-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+
+            {/* Panel header */}
+            <div className="flex items-center justify-between mb-5">
+              <NavLink to="/" onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2.5 no-underline">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600
+                                flex items-center justify-center">
+                  <Code2 size={15} className="text-white"/>
+                </div>
+                <span className="font-mono-jet text-[15px] font-bold text-white tracking-tight">
+                  DSA<span className="text-indigo-400">—</span>MENTOR
+                </span>
               </NavLink>
-              <button className="mobile-close-btn" onClick={closeMobileMenu}>
-                <X size={20} />
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-center w-8 h-8 rounded-xl
+                           bg-white/[0.07] border border-white/[0.1] text-white
+                           hover:bg-white/[0.12] transition-all duration-200 cursor-pointer">
+                <X size={16}/>
               </button>
             </div>
 
-            {/* Mobile Navigation Links */}
-            <div className="mobile-nav-links">
-              <NavLink to="/" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Problems</NavLink>
-              <NavLink to="/contest" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Contests</NavLink>
-              <NavLink to="/leaderboard" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Leaderboard</NavLink>
-              <NavLink to="/verify-certificate" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Verify Certificate</NavLink>
-              <NavLink to="/courses" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Courses</NavLink>
-              <NavLink to="/interview" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Interview</NavLink>
-
-              <NavLink to="/documentation" className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} onClick={closeMobileMenu}>Documentation</NavLink>
+            {/* Nav links */}
+            <div className="flex flex-col gap-0.5 mb-5">
+              {navLinks.map((l, i) => (
+                <NavLink key={l.to} to={l.to} end={l.to === '/'}
+                  onClick={() => setMobileOpen(false)}
+                  className={({ isActive }) =>
+                    `block text-[14px] font-medium px-3 py-2.5 rounded-xl
+                     transition-all duration-150 no-underline
+                     ${isActive
+                       ? 'text-white bg-indigo-500/[0.18]'
+                       : 'text-white/55 hover:text-white hover:bg-white/[0.06]'}`
+                  }
+                  style={{ animationDelay: `${i * 30}ms` }}
+                >
+                  {l.label}
+                </NavLink>
+              ))}
             </div>
 
-            {/* Mobile Auth Section */}
-            <div className="mobile-divider" />
+            {/* Divider */}
+            <div className="h-px bg-white/[0.07] mb-4"/>
 
+            {/* Auth section */}
             {user ? (
-              <>
-                {/* User Info */}
-                <div className="mobile-user-info">
+              <div className="flex flex-col gap-0.5">
+                {/* User info */}
+                <div className="flex items-center gap-3 px-3 py-2.5 mb-1
+                                bg-white/[0.03] rounded-xl border border-white/[0.06]">
                   <img
                     src={user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
                     alt="avatar"
-                    className="mobile-avatar"
+                    className="w-9 h-9 rounded-xl object-cover bg-indigo-600 shrink-0"
                   />
-                  <span className="mobile-username">{user.username}</span>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-white truncate">{user.username}</p>
+                    <p className="text-[11px] text-white/40">Member</p>
+                  </div>
                 </div>
 
-                {/* User Menu Items */}
-                <div className="mobile-nav-links" style={{ marginBottom: 0 }}>
-                  <NavLink to="/profile" className="mobile-nav-link" onClick={closeMobileMenu}>
-                    <User size={14} style={{ display: 'inline', marginRight: 8 }} /> Profile
+                <NavLink to="/profile" onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[14px] font-medium
+                             text-white/60 hover:text-white hover:bg-white/[0.06]
+                             transition-all duration-150 no-underline">
+                  <User size={15}/> Profile
+                </NavLink>
+
+                {user.role === 'admin' && (
+                  <NavLink to="/admin" onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[14px] font-medium
+                               text-white/60 hover:text-white hover:bg-white/[0.06]
+                               transition-all duration-150 no-underline">
+                    <Settings size={15}/> Admin Panel
                   </NavLink>
+                )}
 
-                  {user.role === 'admin' && (
-                    <NavLink to="/admin" className="mobile-nav-link" onClick={closeMobileMenu}>
-                      <Settings size={14} style={{ display: 'inline', marginRight: 8 }} /> Admin Panel
-                    </NavLink>
-                  )}
+                <div className="h-px bg-white/[0.07] my-1"/>
 
-                  <button
-                    className="mobile-nav-link"
-                    onClick={handleLogout}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', color: '#f87171' }}
-                  >
-                    <LogOut size={14} style={{ display: 'inline', marginRight: 8 }} /> Logout
-                  </button>
-                </div>
-              </>
+                <button onClick={handleLogout}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[14px] font-medium
+                             text-red-400/80 hover:text-red-400 hover:bg-red-500/[0.1]
+                             transition-all duration-150 w-full text-left cursor-pointer bg-transparent border-none">
+                  <LogOut size={15}/> Logout
+                </button>
+              </div>
+
             ) : (
-              <div className="mobile-auth-btns">
-                <NavLink to="/login" className="btn-login" onClick={closeMobileMenu}>Log In</NavLink>
-                <NavLink to="/signup" className="btn-signup" onClick={closeMobileMenu}>Sign Up</NavLink>
+              <div className="flex gap-2">
+                <NavLink to="/login" onClick={() => setMobileOpen(false)}
+                  className="flex-1 text-center text-[14px] font-medium text-white/70
+                             py-2.5 rounded-xl border border-white/[0.1]
+                             hover:bg-white/[0.07] hover:text-white
+                             transition-all duration-200 no-underline">
+                  Log In
+                </NavLink>
+                <NavLink to="/signup" onClick={() => setMobileOpen(false)}
+                  className="flex-1 text-center text-[14px] font-semibold text-white
+                             py-2.5 rounded-xl
+                             bg-gradient-to-r from-indigo-500 to-violet-600
+                             shadow-[0_2px_12px_rgba(99,102,241,0.4)]
+                             hover:shadow-[0_4px_18px_rgba(99,102,241,0.55)]
+                             transition-all duration-200 no-underline">
+                  Sign Up
+                </NavLink>
               </div>
             )}
           </div>
         </>
       )}
 
-      {/* Page Content */}
-      <div>
+      {/* ── Page Content ── */}
+      <main className="relative z-10">
         {children}
-      </div>
-    </>
+      </main>
+    </div>
   );
 };
 

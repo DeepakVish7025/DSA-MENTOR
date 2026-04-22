@@ -78,6 +78,19 @@ function App() {
           </Layout>
         } />
         
+ 
+        <Route path="/contact" element={
+          isAuthenticated ? (
+            <Layout>
+              <ContactPage />
+            </Layout>
+          ) : (
+            <Navigate to="/login" />
+          )
+        } />
+
+
+
         {/* Protected routes with layout */}
         <Route path="/" element={
           isAuthenticated ? (
