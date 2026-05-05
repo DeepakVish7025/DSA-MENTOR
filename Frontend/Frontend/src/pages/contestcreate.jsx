@@ -554,11 +554,15 @@ export default function CreateContest() {
 
     try {
       setLoading(true);
-      await axiosClient.post("/api/contests", {
+      // Convert local time to UTC ISO string before sending to backend
+      const payload = {
         ...form,
+        startTime: new Date(form.startTime).toISOString(),
+        endTime: new Date(form.endTime).toISOString(),
         duration: Number(form.duration),
         questions,
-      });
+      };
+      await axiosClient.post("/api/contests", payload);
       navigate("/contests");
     } catch (err) {
       setError(err.response?.data?.message || err.message || "Something went wrong");

@@ -100,7 +100,14 @@ function Contest() {
     }
 
     try {
-      const response = await axiosClient.post('/api/contests/create', formData);
+      // Convert local time to UTC ISO string before sending to backend
+      const payload = {
+        ...formData,
+        startTime: new Date(formData.startTime).toISOString(),
+        endTime: new Date(formData.endTime).toISOString()
+      };
+      
+      const response = await axiosClient.post('/api/contests/create', payload);
       if (response.data) {
         setShowCreateModal(false);
         resetForm();
@@ -116,7 +123,14 @@ function Contest() {
 
   const handleUpdateContest = async () => {
     try {
-      const response = await axiosClient.put(`/api/contests/update/${selectedContest._id}`, formData);
+      // Convert local time to UTC ISO string before sending to backend
+      const payload = {
+        ...formData,
+        startTime: new Date(formData.startTime).toISOString(),
+        endTime: new Date(formData.endTime).toISOString()
+      };
+
+      const response = await axiosClient.put(`/api/contests/update/${selectedContest._id}`, payload);
       if (response.data) {
         setShowCreateModal(false);
         setSelectedContest(null);
@@ -158,6 +172,14 @@ function Contest() {
     return contest.participants?.some(p => p.user === user?._id || p.user?._id === user?._id);
   };
 
+  // Helper to convert Date to local YYYY-MM-DDTHH:mm for datetime-local input
+  const toLocalISOString = (date) => {
+    if (!date || isNaN(new Date(date).getTime())) return "";
+    const d = new Date(date);
+    const offset = d.getTimezoneOffset() * 60000; // offset in milliseconds
+    return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+  };
+
   const resetForm = () => {
     setFormData({
       title: '',
@@ -175,8 +197,8 @@ function Contest() {
     setFormData({
       title: contest.title,
       description: contest.description,
-      startTime: new Date(contest.startTime).toISOString().slice(0, 16),
-      endTime: new Date(contest.endTime).toISOString().slice(0, 16),
+      startTime: toLocalISOString(contest.startTime),
+      endTime: toLocalISOString(contest.endTime),
       duration: contest.duration,
       problems: contest.problems?.map(p => ({
         problemId: p.problemId._id || p.problemId,
